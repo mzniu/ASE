@@ -65,7 +65,7 @@ func TestService_indexEnough_skipsProvider(t *testing.T) {
 			RequestDeadline:  time.Minute,
 		},
 	}
-	md, err := svc.SearchMarkdown(context.Background(), "q", nil)
+	md, err := svc.SearchMarkdown(context.Background(), "q", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +91,7 @@ func TestService_fallback_callsProvider(t *testing.T) {
 			RequestDeadline:  time.Minute,
 		},
 	}
-	_, err := svc.SearchMarkdown(context.Background(), "q", nil)
+	_, err := svc.SearchMarkdown(context.Background(), "q", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func TestService_providerFetch_enrichesMarkdown(t *testing.T) {
 			RequestDeadline:         time.Minute,
 		},
 	}
-	md, err := svc.SearchMarkdown(context.Background(), "q", nil)
+	md, err := svc.SearchMarkdown(context.Background(), "q", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,13 +137,55 @@ func TestService_providerFetch_enrichesMarkdown(t *testing.T) {
 	}
 }
 
+func TestService_deepSearch_overridesProviderFetch(t *testing.T) {
+	idx := sliceIndex{hits: nil}
+	sp := &spyProvider{result: port.ProviderResult{Items: []port.ProviderItem{
+		{URL: "https://example.com/a", Snippet: "snippet"},
+	}}}
+	fetcher := fixedFetcher{pages: []port.FetchedPage{{URL: "https://example.com/a", Text: "deep body"}}}
+	base := func(fetchCfg bool) *Service {
+		return &Service{
+			Index: idx,
+			Registry: map[string]port.SearchProvider{"stub": sp},
+			DefaultNames: []string{"stub"},
+			Fetcher:      fetcher,
+			Config: config.Config{
+				MinHitCount:             1,
+				MinTotalTextLen:         10,
+				ProviderFetchResultURLs: fetchCfg,
+				ProviderFetchMaxURLs:    2,
+				MaxResponseRunes:        10000,
+				RequestDeadline:         time.Minute,
+			},
+		}
+	}
+
+	off := false
+	md, err := base(true).SearchMarkdown(context.Background(), "q", nil, &off)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(md, "deep body") {
+		t.Fatal("expected no fetch when deepsearch=false")
+	}
+
+	on := true
+	md, err = base(false).SearchMarkdown(context.Background(), "q", nil, &on)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(md, "deep body") {
+		t.Fatalf("expected fetch when deepsearch=true: %q", md)
+	}
+}
+
 func TestService_indexError(t *testing.T) {
 	idx := sliceIndex{err: errors.New("down")}
 	svc := &Service{
 		Index:  idx,
 		Config: config.Config{MaxResponseRunes: 100, RequestDeadline: time.Minute},
 	}
-	_, err := svc.SearchMarkdown(context.Background(), "q", nil)
+	_, err := svc.SearchMarkdown(context.Background(), "q", nil, nil)
 	if err == nil {
 		t.Fatal("expected error")
 	}

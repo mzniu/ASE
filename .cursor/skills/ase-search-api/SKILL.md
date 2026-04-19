@@ -48,12 +48,14 @@ Body:
 ```json
 {
   "query": "natural language question",
-  "providers": ["stub"]
+  "providers": ["stub"],
+  "deepsearch": false
 }
 ```
 
 - **`query`**: required, non-empty string.
 - **`providers`**: optional string array (`baidu`, `bing`, `google`, `tavily`, `stub`, …). Omit to use server defaults.
+- **`deepsearch`**: optional boolean. When set, overrides the server’s **`PROVIDER_FETCH_RESULT_URLS`** for this request only (`true` = fetch result-page excerpts; `false` = skip). Omit to use server default.
 
 **curl example** (bash; set `ASE_API_KEY`):
 
@@ -86,7 +88,7 @@ On failure the API returns **`application/problem+json`** (RFC 9457-style): read
 
 1. Confirm **`ASE_BASE_URL`** (and key) with the user if unknown.
 2. Run **health** when connectivity is unclear.
-3. Call **POST /v1/search**; pass the user’s question in **`query`**; choose **`providers`** only if the user specified engines or the task requires a named provider.
+3. Call **POST /v1/search**; pass the user’s question in **`query`**; choose **`providers`** only if the user specified engines or the task requires a named provider. Set **`deepsearch`** only when the user wants to force or skip fetching result URLs for that call.
 4. Return the **Markdown body** to the user (or summarize if they asked for a summary). On errors, surface **`title`/`detail`** from the problem JSON when helpful.
 
 ## More detail

@@ -106,8 +106,38 @@ type fakeSearcher struct {
 	err error
 }
 
-func (f *fakeSearcher) SearchMarkdown(_ context.Context, _ string, _ []string) (string, error) {
+func (f *fakeSearcher) SearchMarkdown(_ context.Context, _ string, _ []string, _ *bool) (string, error) {
 	return f.md, f.err
+}
+
+type deepSearchSpy struct {
+	got *bool
+}
+
+func (d *deepSearchSpy) SearchMarkdown(_ context.Context, _ string, _ []string, deep *bool) (string, error) {
+	d.got = deep
+	return "ok", nil
+}
+
+func TestSearch_deepsearch_passedToOrchestrator(t *testing.T) {
+	t.Setenv("DEV_API_KEY", "secret-key")
+	cfg := config.Load()
+	spy := &deepSearchSpy{}
+	h := handler.NewSearch(cfg, spy)
+
+	body := map[string]any{"query": "hi", "deepsearch": true}
+	raw, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/v1/search", bytes.NewReader(raw))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer secret-key")
+	rr := httptest.NewRecorder()
+	h.Handle(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d", rr.Code)
+	}
+	if spy.got == nil || !*spy.got {
+		t.Fatalf("deepSearch = %v", spy.got)
+	}
 }
 
 func TestSearch_orchestratorErr_mapsProblemDetails(t *testing.T) {

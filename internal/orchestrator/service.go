@@ -26,13 +26,14 @@ type Service struct {
 	Index        port.IndexRepository
 	Registry     map[string]port.SearchProvider // keys: baidu, bing, tavily, stub, …
 	DefaultNames []string                       // used when the HTTP body omits providers
-	Fetcher      port.PageFetcher               // optional; used when Config.ProviderFetchResultURLs is true
+	Fetcher      port.PageFetcher               // optional; used when fetch is enabled (config and/or deepsearch)
 	Config       config.Config
 }
 
 // SearchMarkdown returns final Markdown for POST /v1/search.
 // providers is optional: nil or empty means DefaultNames; names are case-insensitive (e.g. baidu, bing).
-func (s *Service) SearchMarkdown(ctx context.Context, query string, providers []string) (string, error) {
+// deepSearch: nil uses Config.ProviderFetchResultURLs; if set, overrides per request (result URL fetch / REQ-F-012).
+func (s *Service) SearchMarkdown(ctx context.Context, query string, providers []string, deepSearch *bool) (string, error) {
 	rid := middleware.GetReqID(ctx)
 	if rid == "" {
 		rid = "-"
@@ -75,8 +76,12 @@ func (s *Service) SearchMarkdown(ctx context.Context, query string, providers []
 	}
 	items = domain.MergeProviderItemsDedupe(items)
 
+	fetchURLs := s.Config.ProviderFetchResultURLs
+	if deepSearch != nil {
+		fetchURLs = *deepSearch
+	}
 	var pages []port.FetchedPage
-	if s.Config.ProviderFetchResultURLs && s.Fetcher != nil && len(items) > 0 {
+	if fetchURLs && s.Fetcher != nil && len(items) > 0 {
 		urls := make([]string, 0, len(items))
 		for _, it := range items {
 			if it.URL != "" {

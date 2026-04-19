@@ -21,7 +21,7 @@ import (
 
 // MarkdownSearcher is satisfied by *orchestrator.Service (tests may use fakes).
 type MarkdownSearcher interface {
-	SearchMarkdown(ctx context.Context, query string, providers []string) (string, error)
+	SearchMarkdown(ctx context.Context, query string, providers []string, deepSearch *bool) (string, error)
 }
 
 // Search serves POST /v1/search.
@@ -86,7 +86,7 @@ func (s *Search) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	md, err := s.Orch.SearchMarkdown(r.Context(), req.Query, req.Providers)
+	md, err := s.Orch.SearchMarkdown(r.Context(), req.Query, req.Providers, req.DeepSearch)
 	metrics.RecordSearchOrchestration(err)
 	if err != nil {
 		if errors.Is(err, orchestrator.ErrBadRequest) {

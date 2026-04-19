@@ -281,7 +281,7 @@ description: >-
         <ol style="margin:0.5rem 0; padding-left:1.2rem; color:#b8c5d4;">
           <li>向用户确认 <code>ASE_BASE_URL</code> 与密钥来源。</li>
           <li>不确定连通性时先请求 <code>GET …/health</code>。</li>
-          <li><code>POST /v1/search</code>，body 中 <code>query</code> 填用户问题；<code>providers</code> 仅在使用者指定引擎时填写。</li>
+          <li><code>POST /v1/search</code>，body 中 <code>query</code> 填用户问题；<code>providers</code> 仅在使用者指定引擎时填写；<code>deepsearch</code> 可单次覆盖是否对结果 URL 再抓取正文。</li>
           <li>将返回的 Markdown 交给用户或按需摘要；错误时解析 Problem JSON 的 <code>title</code> / <code>detail</code>。</li>
         </ol>
         <h3>安装路径（按你所用的 Agent 选择）</h3>
