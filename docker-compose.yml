@@ -1,5 +1,6 @@
 # 一次编排：OpenSearch + ASE API（默认网络内 API 通过 http://opensearch:9200 访问索引）。
 # 用法：docker compose up --build -d
+# 宿主机端口：默认映射 18080→ASE；若本机已占用（如已 go run），可在仓库根目录 .env 中设置 ASE_HOST_PORT=18081 后重试。
 # 仅索引（旧行为）：docker compose up -d opensearch
 #
 # OpenSearch 为开发向配置（plugins.security.disabled — 勿对公网暴露）。
@@ -45,7 +46,7 @@ services:
   ase:
     build: .
     ports:
-      - "18080:18080"
+      - "${ASE_HOST_PORT:-18080}:18080"
     environment:
       HTTP_ADDR: ":18080"
       OPENSEARCH_URLS: "http://opensearch:9200"
