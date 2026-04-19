@@ -2,11 +2,20 @@
 name: ase-search-api
 description: >-
   Calls the ASE REST API for agent-oriented web search: POST /v1/search returns Markdown;
-  optional index ingest via POST /v1/documents. Use when the user needs ASE search, asks to
-  query the ASE service, or mentions ASE_BASE_URL / DEV_API_KEY / OpenSearch-backed search.
+  optional index ingest via POST /v1/documents. Use when loading this skill in any AI agent or
+  IDE that supports custom skills (Cursor, Claude Code, Copilot extensions, bespoke agents), or
+  when the user mentions ASE search, ASE_BASE_URL, or DEV_API_KEY.
 ---
 
 # ASE Search API (Agent)
+
+## Installing this skill (any agent)
+
+- **What to copy**: this directory’s **`SKILL.md`** (and optionally **`reference.md`**) from the ASE repository path **`.cursor/skills/ase-search-api/`** — the `.cursor` segment is only the **repo folder name**; you are **not** required to use Cursor.
+- **Where to put it**: your product’s documented **skills / rules / tools** directory (create a subfolder e.g. `ase-search-api` and place `SKILL.md` inside). Examples:
+  - **Cursor**: `~/.cursor/skills/ase-search-api/SKILL.md` (Windows: `%USERPROFILE%\.cursor\skills\ase-search-api\SKILL.md`).
+  - **Other agents**: follow that tool’s docs; keep the **YAML frontmatter** and body semantics unchanged.
+- **After install**: set **`ASE_BASE_URL`** and **`ASE_API_KEY`** (or deployment key) in the environment or as documented by your agent.
 
 ## Preconditions
 

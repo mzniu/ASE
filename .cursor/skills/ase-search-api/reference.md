@@ -1,5 +1,7 @@
 # ASE Search API — reference snippets
 
+Copy this file next to `SKILL.md` when your agent supports multiple docs. Installation paths are product-specific — see **Installing this skill (any agent)** in `SKILL.md`.
+
 ## Environment
 
 | Variable | Purpose |

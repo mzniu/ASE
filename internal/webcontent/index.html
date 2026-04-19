@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="ASE — 面向 Agent 的联网搜索 REST API：项目介绍与 Cursor Skill 配置" />
+  <meta name="description" content="ASE — 面向各类 AI Agent 的联网搜索 REST API：项目介绍与通用 Skill 配置" />
   <title>ASE — AI 联网搜索服务</title>
   <style>
     :root {
@@ -177,13 +177,13 @@
       <span class="badge">Agent-ready</span>
       <h1>ASE — AI 联网搜索服务</h1>
       <p class="subtitle">
-        无状态 REST API：Bearer 鉴权，<strong>POST /v1/search</strong> 返回整理后的 <strong>Markdown</strong>，供 Cursor / Agent 与工具链作为检索上下文。支持自建 OpenSearch 索引优先与多引擎回落。
+        无状态 REST API：Bearer 鉴权，<strong>POST /v1/search</strong> 返回整理后的 <strong>Markdown</strong>，供各类 AI Agent 与工具链作为检索上下文。支持自建 OpenSearch 索引优先与多引擎回落。
       </p>
       <nav class="toc" aria-label="页面目录">
         <a href="#about">项目介绍</a>
         <a href="#stack">技术栈</a>
         <a href="#api">API 端点</a>
-        <a href="#skill">Cursor Skill</a>
+        <a href="#skill">Agent Skill</a>
         <a href="#install">安装与指令</a>
         <a href="#examples">调用示例</a>
         <a href="#docs">文档</a>
@@ -199,7 +199,7 @@
           <strong>ASE</strong>（本仓库）面向开发者与 Agent 场景：不提供传统「搜索门户」UI，而是输出<strong>可直接并入模型上下文</strong>的 Markdown 正文。服务可结合<strong>境内自建 OpenSearch</strong>做索引优先检索；索引不足时再回落到配置的搜索引擎（如 Tavily、无头浏览器抓取等，由部署环境决定）。
         </p>
         <p>
-          典型用法：在 Cursor 中安装下方 <strong>Agent Skill</strong>，由 Agent 按约定调用你的 ASE 实例；或通过 HTTP 客户端自行集成。
+          典型用法：将下方 <strong>Skill</strong> 安装到你所用的 AI Agent / IDE（Cursor、Claude Code、Copilot、自建 Agent 等）要求的技能目录，由 Agent 按约定调用 ASE；或通过 HTTP 客户端自行集成。
         </p>
         <ul>
           <li>同步 API，成功路径为 <code>200</code> + Markdown；错误为 <code>application/problem+json</code>。</li>
@@ -253,9 +253,9 @@
     </section>
 
     <section id="skill">
-      <h2>Cursor Agent Skill 配置</h2>
+      <h2>Agent Skill 配置（通用）</h2>
       <div class="card">
-        <p>技能目录（随仓库提供）：<code>.cursor/skills/ase-search-api/</code>，主文件为 <code>SKILL.md</code>。安装到本机后，Cursor Agent 可根据描述匹配场景并调用 ASE。</p>
+        <p>仓库内源文件位于 <code>.cursor/skills/ase-search-api/</code>（目录名中的 <code>.cursor</code> 仅为仓库路径，<strong>不表示仅限 Cursor 使用</strong>）。主文件为 <code>SKILL.md</code>，任选支持自定义技能 / 规则 / 工具说明的 Agent，将文件复制到<strong>该产品文档规定</strong>的目录即可。</p>
         <h3>Skill 元数据（YAML 头）</h3>
         <pre><code>---
 name: ase-search-api
@@ -281,19 +281,20 @@ description: >-
           <li><code>POST /v1/search</code>，body 中 <code>query</code> 填用户问题；<code>providers</code> 仅在使用者指定引擎时填写。</li>
           <li>将返回的 Markdown 交给用户或按需摘要；错误时解析 Problem JSON 的 <code>title</code> / <code>detail</code>。</li>
         </ol>
-        <h3>安装路径（全局 Skill）</h3>
+        <h3>安装路径（按你所用的 Agent 选择）</h3>
         <ul>
-          <li>Windows：<code>%USERPROFILE%\.cursor\skills\ase-search-api\SKILL.md</code></li>
-          <li>macOS / Linux：<code>~/.cursor/skills/ase-search-api/SKILL.md</code></li>
+          <li><strong>通用</strong>：在 Agent 要求的「skills / rules / plugins」目录下新建 <code>ase-search-api/</code>，放入 <code>SKILL.md</code>（及可选 <code>reference.md</code>）。</li>
+          <li><strong>Cursor 示例</strong> — Windows：<code>%USERPROFILE%\.cursor\skills\ase-search-api\SKILL.md</code>；macOS/Linux：<code>~/.cursor/skills/ase-search-api/SKILL.md</code>。</li>
+          <li><strong>其他产品</strong>：以官方文档为准；保持 <code>SKILL.md</code> 内 YAML 与正文语义不变即可。</li>
         </ul>
-        <p class="hint">若已克隆本仓库，可直接从仓库复制 <code>.cursor/skills/ase-search-api/</code> 整目录；无需 Raw 下载。</p>
+        <p class="hint">若已克隆本仓库，可直接复制 <code>.cursor/skills/ase-search-api/</code> 整目录内容到目标路径；亦可从下方 Raw 地址下载。</p>
       </div>
     </section>
 
     <section id="install">
-      <h2>一键生成：给 Cursor Agent 的指令</h2>
+      <h2>一键生成：给 AI Agent 的安装指令</h2>
       <div class="card">
-        <p>填写参数后复制下方文本，粘贴到 <strong>Cursor Chat / Agent</strong>，由 Agent 创建目录并写入 Skill（或从 Raw 拉取）。</p>
+        <p>填写参数后复制下方文本，粘贴到你所用产品的 <strong>Chat / Agent / 助手</strong>（如 Cursor、Claude、Copilot、自建 Agent 等），由助手按说明创建目录并写入 <code>SKILL.md</code>，或自行下载后放到对应技能目录。</p>
         <div class="row">
           <label for="base">ASE 服务基址（ASE_BASE_URL）</label>
           <input id="base" type="text" value="http://127.0.0.1:18080" autocomplete="off" />
@@ -361,18 +362,25 @@ Invoke-RestMethod -Uri "$base/v1/search" -Method Post -ContentType "application/
       var skillUrl = rawRoot + "/.cursor/skills/ase-search-api/SKILL.md";
       var refUrl = rawRoot + "/.cursor/skills/ase-search-api/reference.md";
       return [
-        "【任务】在 Cursor 中为用户安装 ASE 联网搜索 Agent Skill，并（可选）验证服务探活。",
+        "【任务】为用户安装 ASE 联网搜索技能（Skill）：将 SKILL.md 放到当前 AI Agent / IDE 所要求的技能目录，并（可选）验证服务探活。",
+        "",
+        "【适用】任意支持自定义技能、规则或工具说明的 Agent（如 Cursor、Claude Code、GitHub Copilot、自建 Agent 等）；具体目录以各产品文档为准。",
+        "",
+        "【仓库内源路径】（克隆仓库后可直接复制，与是否使用 Cursor 无关）：",
+        ".cursor/skills/ase-search-api/SKILL.md 与 reference.md",
+        "",
+        "【安装】在「你的 Agent 配置的技能目录」下新建子目录 ase-search-api，写入上述文件。",
+        "若使用 Cursor，典型路径为：",
+        "- macOS/Linux: ~/.cursor/skills/ase-search-api/SKILL.md",
+        "- Windows: %USERPROFILE%\\.cursor\\skills\\ase-search-api\\SKILL.md",
+        "其他产品请按其官方文档选择目录。",
+        "",
+        "【内容来源】（二选一，优先 A）：",
+        "A) 工作区已是 ASE 仓库：从 .cursor/skills/ase-search-api/ 复制 SKILL.md（及 reference.md）。",
+        "B) 从 URL 下载：" + skillUrl + " （参考：" + refUrl + "）",
         "",
         "【服务】基址（ASE_BASE_URL）：" + base,
         "【鉴权】API Key 仅从用户或环境变量 ASE_API_KEY / DEV_API_KEY 读取，不要编造或打印完整密钥。",
-        "",
-        "【安装 Skill】在以下路径写入 SKILL.md（无则创建目录）：",
-        "- macOS/Linux: ~/.cursor/skills/ase-search-api/SKILL.md",
-        "- Windows: %USERPROFILE%\\.cursor\\skills\\ase-search-api\\SKILL.md",
-        "",
-        "内容来源（二选一，优先 A）：",
-        "A) 当前工作区已是 ASE 仓库：复制 .cursor/skills/ase-search-api/ 下 SKILL.md（及 reference.md）。",
-        "B) 从可访问 URL 下载：" + skillUrl + " （参考：" + refUrl + "）",
         "",
         "【验证】curl -sS \"" + base + "/health\" ，期望 200 且含 \"status\":\"ok\"。",
         "",
@@ -383,6 +391,7 @@ Invoke-RestMethod -Uri "$base/v1/search" -Method Post -ContentType "application/
       var rawRoot = document.getElementById("raw").value.trim().replace(/\/$/, "");
       var skillUrl = rawRoot + "/.cursor/skills/ase-search-api/SKILL.md";
       return [
+        "# 将 $dir 改为你的 Agent 要求的目录；以下为 Cursor 示例路径",
         "$dir = Join-Path $env:USERPROFILE \".cursor\\skills\\ase-search-api\"",
         "New-Item -ItemType Directory -Force -Path $dir | Out-Null",
         "Invoke-WebRequest -Uri \"" + skillUrl + "\" -OutFile (Join-Path $dir \"SKILL.md\") -UseBasicParsing",
@@ -418,7 +427,7 @@ Invoke-RestMethod -Uri "$base/v1/search" -Method Post -ContentType "application/
       }
     })();
     refresh();
-    if (window.location.hash === "#cursor-agent" || window.location.hash === "#install") {
+    if (window.location.hash === "#cursor-agent" || window.location.hash === "#install" || window.location.hash === "#agent-skill") {
       document.getElementById("install").scrollIntoView();
     }
   </script>
