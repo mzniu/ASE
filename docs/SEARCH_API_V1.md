@@ -84,7 +84,7 @@
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `query` | string | 是 | 自然语言查询；长度上限实现期定义（建议文档化默认如 4k 字符，超限 **400**） |
-| `providers` | string[] | 否 | 选用哪些搜索引擎；合法值为服务端已注册的名称（小写）：`baidu`、`bing`、`google`、`tavily`、`stub` 等。**省略**或空数组时使用环境变量 **`SEARCH_DEFAULT_PROVIDERS`**；若未配置则按 **baidu → bing → google → tavily** 顺序取第一个已启用的引擎。可填多个，结果按 URL 去重合并，并标注 **来源**。未知名称返回 **400**。 |
+| `providers` | string[] | 否 | 选用哪些搜索引擎；合法值为服务端已注册的名称（小写）：`baidu`、`bing`、`google`、`tavily`、`stub` 等。**省略**或空数组时使用环境变量 **`SEARCH_DEFAULT_PROVIDERS`**（Docker 编排默认 **`baidu`**）；若环境变量也未配置，则默认仅 **`baidu`**（未启用则 **`stub`**）。可填多个，结果按 URL 去重合并，并标注 **来源**。未知名称返回 **400**。 |
 
 本版本 **不** 在请求体中暴露 `locale`、`time_range`、`response_format` 等参数；若后续需要，可在 **v2** 或同路径下扩展字段并保持向后兼容。
 

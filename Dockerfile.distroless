@@ -1,0 +1,15 @@
+# 可选：无 Chromium 的最小运行时（仅适合 stub / Tavily 等不依赖无头浏览器的场景）。
+# 构建：docker build -f Dockerfile.distroless -t ase:slim .
+FROM golang:1.24-bookworm AS build
+WORKDIR /src
+ENV CGO_ENABLED=0 GOTOOLCHAIN=auto
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN go build -trimpath -ldflags="-s -w" -o /server ./cmd/server
+
+FROM gcr.io/distroless/base-debian12:nonroot
+COPY --from=build /server /server
+USER nonroot:nonroot
+EXPOSE 18080
+ENTRYPOINT ["/server"]

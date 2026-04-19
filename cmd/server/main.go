@@ -171,11 +171,9 @@ func effectiveDefaultProviders(cfg config.Config, reg map[string]port.SearchProv
 			return out
 		}
 	}
-	order := []string{"baidu", "bing", "google", "tavily"}
-	for _, name := range order {
-		if _, ok := reg[name]; ok {
-			return []string{name}
-		}
+	// 未配置 SEARCH_DEFAULT_PROVIDERS 时仅默认百度；未注册则 stub（不再自动退到 bing/google/tavily）。
+	if _, ok := reg["baidu"]; ok {
+		return []string{"baidu"}
 	}
 	return []string{"stub"}
 }
