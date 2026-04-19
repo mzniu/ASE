@@ -106,6 +106,19 @@ curl -sS http://127.0.0.1:18080/health
 curl -sS -X POST http://127.0.0.1:18080/v1/search -H "Content-Type: application/json" -H "Authorization: Bearer dev-only" -d '{"query":"hello"}'
 ```
 
+#### OpenSearch 容器立刻退出（exit 1）时
+
+1. **看日志**：`docker logs ase-opensearch-1`（容器名以 `docker compose ps` 为准），常见为 `max virtual memory areas vm.max_map_count ... is too low` 或内存/bootstrap 相关报错。  
+2. **提高 vm.max_map_count**（Docker Desktop 使用 WSL2 时，在 **PowerShell** 执行，发行版名可用 `wsl -l -v` 查看）：
+
+```powershell
+wsl -d docker-desktop -- sysctl -w vm.max_map_count=262144
+```
+
+若提示找不到 `docker-desktop`，可尝试 `docker-desktop-data` 或在 WSL 发行版内执行同一 `sysctl` 命令。可写入 `%USERPROFILE%\.wslconfig` 持久化（需查当前 Windows 文档）。  
+3. **清空损坏的数据卷后重试**：`docker compose down -v`，再 `docker compose up --build -d`（**会删除** OpenSearch 卷内数据）。  
+4. 仓库内 `docker-compose.yml` 已为 OpenSearch 配置 **`cap_add: IPC_LOCK`** 与 **`ulimits.memlock`**；若仍失败，请在 **Docker Desktop → Settings → Resources** 提高内存/磁盘配额。
+
 ---
 
 ## 许可证

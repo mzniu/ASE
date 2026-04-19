@@ -3,13 +3,31 @@
 # 仅索引（旧行为）：docker compose up -d opensearch
 #
 # OpenSearch 为开发向配置（plugins.security.disabled — 勿对公网暴露）。
+#
+# 若容器反复 exit(1)，常见原因：
+# 1) Linux/WSL2 内核 vm.max_map_count 过低 — 见 README「Docker 与 OpenSearch」排障。
+# 2) 数据卷损坏 — docker compose down -v 后重新 up（会清空索引数据）。
+# 3) 内存不足 — 下面 JVM 已改为 256m，若仍 OOM 请关闭其它容器或加大 Docker 内存配额。
 services:
   opensearch:
     image: opensearchproject/opensearch:2.17.0
+    # JVM 内存锁定与文件句柄；缺省时 OpenSearch 常因 bootstrap 检查失败而立即退出
+    cap_add:
+      - IPC_LOCK
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
     environment:
       - discovery.type=single-node
       - plugins.security.disabled=true
-      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+      # 单机开发用较小堆，降低小内存机器上 OOM 概率
+      - OPENSEARCH_JAVA_OPTS=-Xms256m -Xmx256m
+      # 避免小磁盘/开发环境触发高水位导致分片分配失败
+      - "cluster.routing.allocation.disk.threshold_enabled=false"
     ports:
       - "9200:9200"
     volumes:
