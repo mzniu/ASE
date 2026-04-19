@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="ASE — 面向 Agent 的联网搜索 REST API：项目介绍与 Cursor Skill 配置" />
+  <title>ASE — AI 联网搜索服务</title>
+  <style>
+    :root {
+      --bg: #0c0f14;
+      --bg2: #121820;
+      --card: #1a2332;
+      --text: #e8edf4;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent2: #818cf8;
+      --border: #2d3a4d;
+      --ok: #34d399;
+      --code: #0d1117;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .wrap { max-width: 52rem; margin: 0 auto; padding: 1.25rem 1.25rem 3rem; }
+    header.hero {
+      padding: 2.5rem 0 2rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2rem;
+      background: linear-gradient(165deg, var(--bg2) 0%, var(--bg) 55%);
+    }
+    .hero-inner { max-width: 52rem; margin: 0 auto; padding: 0 1.25rem; }
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
+    }
+    h1 { font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 700; margin: 0 0 0.5rem; letter-spacing: -0.02em; }
+    .subtitle { color: var(--muted); font-size: 1rem; max-width: 40rem; margin: 0; }
+    nav.toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin-top: 1.25rem;
+      font-size: 0.88rem;
+    }
+    nav.toc a { color: var(--accent); text-decoration: none; }
+    nav.toc a:hover { text-decoration: underline; }
+    h2 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      margin: 2rem 0 0.75rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h2:first-of-type { margin-top: 0; }
+    h3 { font-size: 1.05rem; font-weight: 600; margin: 1.25rem 0 0.5rem; color: #cbd5e1; }
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+    p { margin: 0.5rem 0; color: #c5d0de; }
+    ul { margin: 0.4rem 0; padding-left: 1.2rem; color: #b8c5d4; }
+    li { margin: 0.25rem 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 0.5rem 0;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.65rem;
+      text-align: left;
+    }
+    th { background: var(--bg2); color: var(--muted); font-weight: 600; }
+    code, .mono {
+      font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+      font-size: 0.86em;
+    }
+    code {
+      background: var(--code);
+      padding: 0.12rem 0.4rem;
+      border-radius: 4px;
+      color: #e2e8f0;
+    }
+    pre {
+      background: var(--code);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      overflow-x: auto;
+      font-size: 0.78rem;
+      line-height: 1.5;
+      color: #cbd5e1;
+      margin: 0.5rem 0;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    a { color: var(--accent); }
+    .hint { font-size: 0.82rem; color: var(--muted); margin-top: 0.35rem; }
+    label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 0.25rem; }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.45rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #0d1117;
+      color: var(--text);
+      font-size: 0.88rem;
+      font-family: inherit;
+    }
+    .row { margin-bottom: 0.65rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.6rem; }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      padding: 0.4rem 0.85rem;
+      font-size: 0.86rem;
+      font-weight: 500;
+      background: linear-gradient(135deg, #0ea5e9, var(--accent2));
+      color: #fff;
+    }
+    button.secondary { background: #334155; color: #e2e8f0; }
+    button:active { opacity: 0.92; }
+    textarea.copybox {
+      width: 100%;
+      min-height: 14rem;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0d1117;
+      color: #cbd5e1;
+      font-size: 0.78rem;
+      font-family: ui-monospace, monospace;
+      line-height: 1.45;
+      resize: vertical;
+    }
+    .status { font-size: 0.82rem; color: var(--ok); min-height: 1.2rem; margin-top: 0.35rem; }
+    footer {
+      margin-top: 2.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .grid2 {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 640px) {
+      .grid2 { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <span class="badge">Agent-ready</span>
+      <h1>ASE — AI 联网搜索服务</h1>
+      <p class="subtitle">
+        无状态 REST API：Bearer 鉴权，<strong>POST /v1/search</strong> 返回整理后的 <strong>Markdown</strong>，供 Cursor / Agent 与工具链作为检索上下文。支持自建 OpenSearch 索引优先与多引擎回落。
+      </p>
+      <nav class="toc" aria-label="页面目录">
+        <a href="#about">项目介绍</a>
+        <a href="#stack">技术栈</a>
+        <a href="#api">API 端点</a>
+        <a href="#skill">Cursor Skill</a>
+        <a href="#install">安装与指令</a>
+        <a href="#examples">调用示例</a>
+        <a href="#docs">文档</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section id="about">
+      <h2>项目介绍</h2>
+      <div class="card">
+        <p>
+          <strong>ASE</strong>（本仓库）面向开发者与 Agent 场景：不提供传统「搜索门户」UI，而是输出<strong>可直接并入模型上下文</strong>的 Markdown 正文。服务可结合<strong>境内自建 OpenSearch</strong>做索引优先检索；索引不足时再回落到配置的搜索引擎（如 Tavily、无头浏览器抓取等，由部署环境决定）。
+        </p>
+        <p>
+          典型用法：在 Cursor 中安装下方 <strong>Agent Skill</strong>，由 Agent 按约定调用你的 ASE 实例；或通过 HTTP 客户端自行集成。
+        </p>
+        <ul>
+          <li>同步 API，成功路径为 <code>200</code> + Markdown；错误为 <code>application/problem+json</code>。</li>
+          <li>限流保护 <code>/v1/*</code>；<code>/health</code> 与 <code>/metrics</code> 无鉴权、不限流。</li>
+          <li>开源许可：<a href="../LICENSE">MIT</a>（见仓库根目录）。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="stack">
+      <h2>技术栈（摘要）</h2>
+      <div class="card">
+        <div class="grid2">
+          <div>
+            <h3>运行时</h3>
+            <ul>
+              <li>Go（版本见仓库 <code>go.mod</code>）</li>
+              <li>HTTP 路由：chi v5</li>
+              <li>可选：OpenSearch 2.x（opensearch-go）</li>
+            </ul>
+          </div>
+          <div>
+            <h3>可观测</h3>
+            <ul>
+              <li><code>GET /metrics</code> — Prometheus（如 <code>ase_search_orchestration_total</code>）</li>
+              <li><code>GET /health</code> — 探活 JSON</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="api">
+      <h2>HTTP API（v1）</h2>
+      <div class="card">
+        <table>
+          <thead>
+            <tr><th>方法</th><th>路径</th><th>说明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>POST</code></td><td><code>/v1/search</code></td><td>主业务：JSON 查询 → <code>text/markdown</code>（需 Bearer）</td></tr>
+            <tr><td><code>POST</code></td><td><code>/v1/documents</code></td><td>可选：写入索引字段 <code>id</code> / <code>title</code> / <code>body_text</code>；未配置 OpenSearch 时 <strong>501</strong></td></tr>
+            <tr><td><code>GET</code></td><td><code>/health</code></td><td>探活，无鉴权</td></tr>
+            <tr><td><code>GET</code></td><td><code>/metrics</code></td><td>Prometheus 文本，无鉴权</td></tr>
+          </tbody>
+        </table>
+        <p class="hint">完整契约与错误码见 <a href="../docs/SEARCH_API_V1.md">docs/SEARCH_API_V1.md</a>（本地克隆仓库后打开）。</p>
+      </div>
+    </section>
+
+    <section id="skill">
+      <h2>Cursor Agent Skill 配置</h2>
+      <div class="card">
+        <p>技能目录（随仓库提供）：<code>.cursor/skills/ase-search-api/</code>，主文件为 <code>SKILL.md</code>。安装到本机后，Cursor Agent 可根据描述匹配场景并调用 ASE。</p>
+        <h3>Skill 元数据（YAML 头）</h3>
+        <pre><code>---
+name: ase-search-api
+description: >-
+  Calls the ASE REST API for agent-oriented web search: POST /v1/search returns Markdown;
+  optional index ingest via POST /v1/documents. Use when the user needs ASE search, asks to
+  query the ASE service, or mentions ASE_BASE_URL / DEV_API_KEY / OpenSearch-backed search.
+---</code></pre>
+        <h3>环境变量（调用前）</h3>
+        <table>
+          <thead>
+            <tr><th>变量</th><th>说明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>ASE_BASE_URL</code></td><td>服务根地址，默认 <code>http://127.0.0.1:18080</code>，无末尾斜杠</td></tr>
+            <tr><td><code>ASE_API_KEY</code> / <code>DEV_API_KEY</code></td><td>与部署一致；请求头 <code>Authorization: Bearer &lt;token&gt;</code></td></tr>
+          </tbody>
+        </table>
+        <h3>Agent 工作流（摘要）</h3>
+        <ol style="margin:0.5rem 0; padding-left:1.2rem; color:#b8c5d4;">
+          <li>向用户确认 <code>ASE_BASE_URL</code> 与密钥来源。</li>
+          <li>不确定连通性时先请求 <code>GET …/health</code>。</li>
+          <li><code>POST /v1/search</code>，body 中 <code>query</code> 填用户问题；<code>providers</code> 仅在使用者指定引擎时填写。</li>
+          <li>将返回的 Markdown 交给用户或按需摘要；错误时解析 Problem JSON 的 <code>title</code> / <code>detail</code>。</li>
+        </ol>
+        <h3>安装路径（全局 Skill）</h3>
+        <ul>
+          <li>Windows：<code>%USERPROFILE%\.cursor\skills\ase-search-api\SKILL.md</code></li>
+          <li>macOS / Linux：<code>~/.cursor/skills/ase-search-api/SKILL.md</code></li>
+        </ul>
+        <p class="hint">若已克隆本仓库，可直接从仓库复制 <code>.cursor/skills/ase-search-api/</code> 整目录；无需 Raw 下载。</p>
+      </div>
+    </section>
+
+    <section id="install">
+      <h2>一键生成：给 Cursor Agent 的指令</h2>
+      <div class="card">
+        <p>填写参数后复制下方文本，粘贴到 <strong>Cursor Chat / Agent</strong>，由 Agent 创建目录并写入 Skill（或从 Raw 拉取）。</p>
+        <div class="row">
+          <label for="base">ASE 服务基址（ASE_BASE_URL）</label>
+          <input id="base" type="text" value="http://127.0.0.1:18080" autocomplete="off" />
+        </div>
+        <div class="row">
+          <label for="raw">Skill 的 Raw 根地址（不含末尾斜杠；私有仓可能需改镜像或仅用本地复制）</label>
+          <input id="raw" type="text" value="https://github.com/mzniu/ASE/raw/main" autocomplete="off" />
+        </div>
+        <textarea id="prompt" class="copybox" readonly></textarea>
+        <div class="actions">
+          <button type="button" id="btnCopyPrompt">复制 Agent 指令</button>
+          <button type="button" class="secondary" id="btnRegen">重新生成</button>
+        </div>
+        <div class="status" id="copyStatus"></div>
+        <h3>PowerShell：仅下载 SKILL.md（可选）</h3>
+        <textarea id="ps" class="copybox" readonly style="min-height:6.5rem;"></textarea>
+        <div class="actions">
+          <button type="button" class="secondary" id="btnCopyPs">复制 PowerShell</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="examples">
+      <h2>调用示例</h2>
+      <div class="card">
+        <h3>健康检查（bash）</h3>
+        <pre><code>curl -sS "${ASE_BASE_URL:-http://127.0.0.1:18080}/health"</code></pre>
+        <h3>搜索（bash）</h3>
+        <pre><code>curl -sS -X POST "${ASE_BASE_URL:-http://127.0.0.1:18080}/v1/search" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${ASE_API_KEY}" \
+  -d '{"query":"hello","providers":["stub"]}'</code></pre>
+        <h3>搜索（PowerShell）</h3>
+        <pre><code>$base = $env:ASE_BASE_URL; if (-not $base) { $base = "http://127.0.0.1:18080" }
+$key = $env:ASE_API_KEY
+Invoke-RestMethod -Uri "$base/v1/search" -Method Post -ContentType "application/json" `
+  -Headers @{ Authorization = "Bearer $key" } -Body '{"query":"hello","providers":["stub"]}'</code></pre>
+        <h3>Docker 一次编排（仓库根目录）</h3>
+        <pre><code>docker compose up --build -d</code></pre>
+        <p class="hint">默认暴露 <code>18080</code>（API）与 <code>9200</code>（OpenSearch）。详见仓库 <a href="../README.md">README.md</a>。</p>
+      </div>
+    </section>
+
+    <section id="docs">
+      <h2>仓库文档</h2>
+      <div class="card">
+        <ul>
+          <li><a href="../docs/SEARCH_API_V1.md">API 与产品说明 v1</a></li>
+          <li><a href="../docs/ARCHITECTURE.md">架构概要</a></li>
+          <li><a href="../README.md">README（完整说明）</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>
+      <p>静态页路径：<code>static/index.html</code> — 本地用浏览器打开即可；部署静态站点时将 <code>static/</code> 作为根目录或配置反代。</p>
+      <p>MIT License · 详见仓库 <a href="../LICENSE">LICENSE</a></p>
+    </footer>
+  </div>
+
+  <script>
+    function buildPrompt() {
+      var base = document.getElementById("base").value.trim().replace(/\/$/, "");
+      var rawRoot = document.getElementById("raw").value.trim().replace(/\/$/, "");
+      var skillUrl = rawRoot + "/.cursor/skills/ase-search-api/SKILL.md";
+      var refUrl = rawRoot + "/.cursor/skills/ase-search-api/reference.md";
+      return [
+        "【任务】在 Cursor 中为用户安装 ASE 联网搜索 Agent Skill，并（可选）验证服务探活。",
+        "",
+        "【服务】基址（ASE_BASE_URL）：" + base,
+        "【鉴权】API Key 仅从用户或环境变量 ASE_API_KEY / DEV_API_KEY 读取，不要编造或打印完整密钥。",
+        "",
+        "【安装 Skill】在以下路径写入 SKILL.md（无则创建目录）：",
+        "- macOS/Linux: ~/.cursor/skills/ase-search-api/SKILL.md",
+        "- Windows: %USERPROFILE%\\.cursor\\skills\\ase-search-api\\SKILL.md",
+        "",
+        "内容来源（二选一，优先 A）：",
+        "A) 当前工作区已是 ASE 仓库：复制 .cursor/skills/ase-search-api/ 下 SKILL.md（及 reference.md）。",
+        "B) 从可访问 URL 下载：" + skillUrl + " （参考：" + refUrl + "）",
+        "",
+        "【验证】curl -sS \"" + base + "/health\" ，期望 200 且含 \"status\":\"ok\"。",
+        "",
+        "【完成】汇报 Skill 是否落盘与健康检查结果；提醒用户可用自然语言请求「用 ASE 搜索 …」。",
+      ].join("\n");
+    }
+    function buildPs() {
+      var rawRoot = document.getElementById("raw").value.trim().replace(/\/$/, "");
+      var skillUrl = rawRoot + "/.cursor/skills/ase-search-api/SKILL.md";
+      return [
+        "$dir = Join-Path $env:USERPROFILE \".cursor\\skills\\ase-search-api\"",
+        "New-Item -ItemType Directory -Force -Path $dir | Out-Null",
+        "Invoke-WebRequest -Uri \"" + skillUrl + "\" -OutFile (Join-Path $dir \"SKILL.md\") -UseBasicParsing",
+        "Write-Host \"SKILL.md -> $dir\"",
+      ].join("\r\n");
+    }
+    function refresh() {
+      document.getElementById("prompt").value = buildPrompt();
+      document.getElementById("ps").value = buildPs();
+      document.getElementById("copyStatus").textContent = "";
+    }
+    async function copyText(elId, msg) {
+      try {
+        await navigator.clipboard.writeText(document.getElementById(elId).value);
+        document.getElementById("copyStatus").textContent = msg;
+      } catch (e) {
+        document.getElementById("copyStatus").textContent = "复制失败，请手动全选复制。";
+      }
+    }
+    document.getElementById("btnCopyPrompt").addEventListener("click", function () {
+      copyText("prompt", "已复制 Agent 指令。");
+    });
+    document.getElementById("btnCopyPs").addEventListener("click", function () {
+      copyText("ps", "已复制 PowerShell。");
+    });
+    document.getElementById("btnRegen").addEventListener("click", refresh);
+    document.getElementById("base").addEventListener("change", refresh);
+    document.getElementById("raw").addEventListener("change", refresh);
+    refresh();
+    if (window.location.hash === "#cursor-agent" || window.location.hash === "#install") {
+      document.getElementById("install").scrollIntoView();
+    }
+  </script>
+</body>
+</html>

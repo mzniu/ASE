@@ -12,7 +12,6 @@ description: >-
 
 - **Base URL**: from env **`ASE_BASE_URL`**, default `http://127.0.0.1:18080` (no trailing slash).
 - **API key**: env **`ASE_API_KEY`** (or **`DEV_API_KEY`** if that is what the deployment documents). Send as `Authorization: Bearer <token>`.
-- Optional: **`ASE_SKIP_TLS_VERIFY=true`** only for broken dev TLS (prefer fixing certificates).
 
 ## Quick health check
 

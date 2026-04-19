@@ -13,7 +13,7 @@
 | [立项说明书](docs/PROJECT_INITIATION.md) | 背景、目标、范围、里程碑、风险与成功标准 |
 | [软件需求规格说明（SRS）](docs/SRS.md) | 可追溯需求 ID，与测试/实现的追踪关系 |
 | [API 与产品说明 v1](docs/SEARCH_API_V1.md) | 对外契约：端点、鉴权、响应、截断与错误语义 |
-| [Cursor Agent Skill 安装页](static/agent-skill-setup.html) | 静态页：生成可复制指令，安装 `.cursor/skills/ase-search-api` 并调用 ASE |
+| [**项目主页（静态）**](static/index.html) | 项目介绍 + Cursor Skill 全文配置、API 摘要、可复制 Agent 指令与示例 |
 | [测试与 TDD 规范](docs/TESTING_AND_TDD.md) | 红-绿-重构、测试分层、CI、合并门禁 |
 | [GitHub 工作流](docs/GITHUB_WORKFLOW.md) | 分支保护、Actions、密钥、Dependabot |
 | [架构概要](docs/ARCHITECTURE.md) | 概要设计：逻辑组件、**技术选型**、数据流、境内驻留 |
