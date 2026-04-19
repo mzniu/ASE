@@ -40,6 +40,7 @@
 |------|------|------|
 | `POST` | `/v1/search` | 主业务：JSON 查询 → Markdown（需 Bearer） |
 | `POST` | `/v1/documents` | 可选：向索引写入 `id` / `title` / `body_text`；未配置 OpenSearch 时 **501**（详见 [SEARCH_API_V1.md](./docs/SEARCH_API_V1.md)） |
+| `GET` | `/` | 小型 JSON 说明（服务名与常用路径），**无鉴权**、**不限流**（避免浏览器打开根路径时出现 404） |
 | `GET` | `/health` | 探活 JSON，**无鉴权**、**不限流** |
 | `GET` | `/metrics` | **Prometheus** 文本指标（如 `ase_search_orchestration_total`），**无鉴权**、**不限流** |
 

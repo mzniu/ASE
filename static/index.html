@@ -203,7 +203,7 @@
         </p>
         <ul>
           <li>同步 API，成功路径为 <code>200</code> + Markdown；错误为 <code>application/problem+json</code>。</li>
-          <li>限流保护 <code>/v1/*</code>；<code>/health</code> 与 <code>/metrics</code> 无鉴权、不限流。</li>
+          <li>限流保护 <code>/v1/*</code>；<code>/</code>、<code>/health</code> 与 <code>/metrics</code> 无鉴权、不限流。</li>
           <li>开源许可：<a href="../LICENSE">MIT</a>（见仓库根目录）。</li>
         </ul>
       </div>
@@ -240,6 +240,7 @@
             <tr><th>方法</th><th>路径</th><th>说明</th></tr>
           </thead>
           <tbody>
+            <tr><td><code>GET</code></td><td><code>/</code></td><td>JSON 服务说明（无鉴权）</td></tr>
             <tr><td><code>POST</code></td><td><code>/v1/search</code></td><td>主业务：JSON 查询 → <code>text/markdown</code>（需 Bearer）</td></tr>
             <tr><td><code>POST</code></td><td><code>/v1/documents</code></td><td>可选：写入索引字段 <code>id</code> / <code>title</code> / <code>body_text</code>；未配置 OpenSearch 时 <strong>501</strong></td></tr>
             <tr><td><code>GET</code></td><td><code>/health</code></td><td>探活，无鉴权</td></tr>
