@@ -9,6 +9,11 @@
 - 本机安装 **Git**、**Docker Engine** 与 **Docker Compose**（二选一即可）：
   - **推荐（Compose V2 插件）**：`sudo apt-get install -y docker-compose-plugin`，确认 `docker compose version`。
   - 若仅有旧版 `docker-compose` 命令，`scripts/deploy/vm-install.sh` 也会自动改用。
+- 安装 Docker 后，**把登录用户加入 `docker` 组**，否则会出现 `Permission denied` 访问套接字：
+  ```bash
+  sudo usermod -aG docker "$USER"
+  ```
+  然后 **退出 SSH 再登录**，或执行 `newgrp docker`，再运行 `docker info` 确认无报错。
 
 ## 2. 获取代码
 
@@ -75,6 +80,8 @@ docker compose version
 ```
 
 然后再运行 `vm-install.sh`。
+
+若出现 **`PermissionError: ... docker.sock`** 或 **`Permission denied`**（访问 Docker 套接字），见上文「把用户加入 docker 组」，或使用 **`sudo bash scripts/deploy/vm-install.sh`** 临时部署。
 
 或手动：
 

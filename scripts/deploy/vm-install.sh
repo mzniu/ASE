@@ -10,6 +10,18 @@ if ! command -v docker >/dev/null 2>&1; then
 	exit 1
 fi
 
+if ! docker info >/dev/null 2>&1; then
+	echo "无法连接 Docker 守护进程（常见原因：当前用户无权访问 /var/run/docker.sock）。"
+	echo ""
+	echo "推荐：把用户加入 docker 组后重新登录 SSH，再运行本脚本："
+	echo "  sudo usermod -aG docker \"\$USER\""
+	echo "  newgrp docker"
+	echo ""
+	echo "或临时用 root 执行："
+	echo "  sudo bash scripts/deploy/vm-install.sh"
+	exit 1
+fi
+
 # Compose V2：docker compose（需 docker-compose-plugin）；旧环境可能是 docker-compose 独立命令
 docker_compose() {
 	if docker compose version >/dev/null 2>&1; then
