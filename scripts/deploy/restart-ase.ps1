@@ -4,7 +4,8 @@
     拉取最新 ASE 代码，重建并轮换 Docker 中的 ase 服务（OpenSearch 保持运行）。
 
 .DESCRIPTION
-    在仓库根目录执行。等价于：git pull → stop/rm ase → docker compose build ase → up -d --no-deps --force-recreate ase
+    在仓库根目录执行。先构建镜像（旧容器继续服务），再 up --force-recreate 轮换，缩短不可用时间。
+    等价于：git pull → docker compose build ase → up -d --no-deps --force-recreate ase
 
 .PARAMETER RepoRoot
     ASE 仓库根路径（含 docker-compose.yml）。默认为本脚本上两级目录。
@@ -61,18 +62,14 @@ if (Test-Path (Join-Path $RepoRoot ".git")) {
     Write-Host "提示：当前目录不是 git 仓库，跳过 git pull。"
 }
 
-Write-Host ">>> 停止并移除现有 ase 容器"
-try { Invoke-DockerCompose -ComposeArgs @("stop", "ase") } catch { }
-try { Invoke-DockerCompose -ComposeArgs @("rm", "-f", "ase") } catch { }
-
-Write-Host ">>> 构建 ase 镜像"
+Write-Host ">>> 构建 ase 镜像（构建期间旧容器仍运行）"
 if ($NoCache) {
     Invoke-DockerCompose -ComposeArgs @("build", "--no-cache", "ase")
 } else {
     Invoke-DockerCompose -ComposeArgs @("build", "ase")
 }
 
-Write-Host ">>> 启动 ase（不拉起/重启 opensearch）"
+Write-Host ">>> 轮换 ase 容器（不拉起/重启 opensearch；中断仅发生在停旧启新）"
 Invoke-DockerCompose -ComposeArgs @("up", "-d", "--no-deps", "--force-recreate", "ase")
 
 Write-Host ""

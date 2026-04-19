@@ -51,9 +51,11 @@ services:
       HTTP_ADDR: ":18080"
       OPENSEARCH_URLS: "http://opensearch:9200"
       OPENSEARCH_INDEX: "ase_documents"
-      # 默认可在无 Tavily/浏览器依赖下用 stub 做回落验证；生产请改为真实 providers
-      SEARCH_DEFAULT_PROVIDERS: "stub"
-      DEV_API_KEY: "dev-only"
+      # 默认可在无 Tavily/浏览器依赖下用 stub 做回落验证；生产在宿主机 .env 设置 SEARCH_DEFAULT_PROVIDERS（如 baidu、tavily）。
+      # 多个合法 Bearer 用逗号分隔；勿把真实 Key 写进仓库，在 .env 中配置 AUTH_VALID_API_KEYS。
+      AUTH_VALID_API_KEYS: ${AUTH_VALID_API_KEYS:-}
+      SEARCH_DEFAULT_PROVIDERS: ${SEARCH_DEFAULT_PROVIDERS:-stub}
+      DEV_API_KEY: ${DEV_API_KEY:-dev-only}
     depends_on:
       opensearch:
         condition: service_healthy
