@@ -93,6 +93,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	r.Get("/", handler.Root)
+	r.Get("/api/info", handler.ServiceInfo)
 	r.Get("/health", handler.Health)
 	r.Handle("/metrics", promhttp.Handler())
 

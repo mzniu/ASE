@@ -13,7 +13,7 @@
 | [立项说明书](docs/PROJECT_INITIATION.md) | 背景、目标、范围、里程碑、风险与成功标准 |
 | [软件需求规格说明（SRS）](docs/SRS.md) | 可追溯需求 ID，与测试/实现的追踪关系 |
 | [API 与产品说明 v1](docs/SEARCH_API_V1.md) | 对外契约：端点、鉴权、响应、截断与错误语义 |
-| [**项目主页（静态）**](static/index.html) | 项目介绍 + Cursor Skill 全文配置、API 摘要、可复制 Agent 指令与示例 |
+| **项目主页** | 启动服务后访问根路径 **`GET /`**（嵌入 `internal/webcontent/index.html`）：项目介绍 + Cursor Skill 全文配置、API 摘要、可复制 Agent 指令；机器可读 **`GET /api/info`**（JSON） |
 | [测试与 TDD 规范](docs/TESTING_AND_TDD.md) | 红-绿-重构、测试分层、CI、合并门禁 |
 | [GitHub 工作流](docs/GITHUB_WORKFLOW.md) | 分支保护、Actions、密钥、Dependabot |
 | [架构概要](docs/ARCHITECTURE.md) | 概要设计：逻辑组件、**技术选型**、数据流、境内驻留 |
@@ -40,7 +40,8 @@
 |------|------|------|
 | `POST` | `/v1/search` | 主业务：JSON 查询 → Markdown（需 Bearer） |
 | `POST` | `/v1/documents` | 可选：向索引写入 `id` / `title` / `body_text`；未配置 OpenSearch 时 **501**（详见 [SEARCH_API_V1.md](./docs/SEARCH_API_V1.md)） |
-| `GET` | `/` | 小型 JSON 说明（服务名与常用路径），**无鉴权**、**不限流**（避免浏览器打开根路径时出现 404） |
+| `GET` | `/` | **HTML 项目主页**（嵌入静态页），**无鉴权**、**不限流** |
+| `GET` | `/api/info` | JSON 服务发现（服务名与常用路径），**无鉴权**、**不限流** |
 | `GET` | `/health` | 探活 JSON，**无鉴权**、**不限流** |
 | `GET` | `/metrics` | **Prometheus** 文本指标（如 `ase_search_orchestration_total`），**无鉴权**、**不限流** |
 

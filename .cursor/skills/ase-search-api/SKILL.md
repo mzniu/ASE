@@ -21,6 +21,9 @@ curl -sS "${ASE_BASE_URL:-http://127.0.0.1:18080}/health"
 
 Expect `200` and JSON containing `"status":"ok"`.
 
+- **HTML project homepage**: `GET /` (browser or `curl` — embedded docs + Skill setup UI).
+- **JSON discovery**: `GET /api/info` — service name and path links for tooling.
+
 ## Primary: search (Markdown)
 
 `POST /v1/search` — body JSON, response **plain Markdown** (`200`, `Content-Type: text/markdown; charset=utf-8`).

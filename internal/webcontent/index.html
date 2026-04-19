@@ -204,7 +204,7 @@
         <ul>
           <li>同步 API，成功路径为 <code>200</code> + Markdown；错误为 <code>application/problem+json</code>。</li>
           <li>限流保护 <code>/v1/*</code>；<code>/</code>、<code>/health</code> 与 <code>/metrics</code> 无鉴权、不限流。</li>
-          <li>开源许可：<a href="../LICENSE">MIT</a>（见仓库根目录）。</li>
+          <li>开源许可：<a href="https://github.com/mzniu/ASE/blob/main/LICENSE" target="_blank" rel="noopener">MIT</a>（仓库根目录 <code>LICENSE</code>）。</li>
         </ul>
       </div>
     </section>
@@ -240,14 +240,15 @@
             <tr><th>方法</th><th>路径</th><th>说明</th></tr>
           </thead>
           <tbody>
-            <tr><td><code>GET</code></td><td><code>/</code></td><td>JSON 服务说明（无鉴权）</td></tr>
+            <tr><td><code>GET</code></td><td><code>/</code></td><td>本主页（HTML）</td></tr>
+            <tr><td><code>GET</code></td><td><code>/api/info</code></td><td>JSON 服务发现（无鉴权）</td></tr>
             <tr><td><code>POST</code></td><td><code>/v1/search</code></td><td>主业务：JSON 查询 → <code>text/markdown</code>（需 Bearer）</td></tr>
             <tr><td><code>POST</code></td><td><code>/v1/documents</code></td><td>可选：写入索引字段 <code>id</code> / <code>title</code> / <code>body_text</code>；未配置 OpenSearch 时 <strong>501</strong></td></tr>
             <tr><td><code>GET</code></td><td><code>/health</code></td><td>探活，无鉴权</td></tr>
             <tr><td><code>GET</code></td><td><code>/metrics</code></td><td>Prometheus 文本，无鉴权</td></tr>
           </tbody>
         </table>
-        <p class="hint">完整契约与错误码见 <a href="../docs/SEARCH_API_V1.md">docs/SEARCH_API_V1.md</a>（本地克隆仓库后打开）。</p>
+        <p class="hint">完整契约与错误码见 <a href="https://github.com/mzniu/ASE/blob/main/docs/SEARCH_API_V1.md" target="_blank" rel="noopener">docs/SEARCH_API_V1.md</a>（GitHub）。</p>
       </div>
     </section>
 
@@ -332,7 +333,7 @@ Invoke-RestMethod -Uri "$base/v1/search" -Method Post -ContentType "application/
   -Headers @{ Authorization = "Bearer $key" } -Body '{"query":"hello","providers":["stub"]}'</code></pre>
         <h3>Docker 一次编排（仓库根目录）</h3>
         <pre><code>docker compose up --build -d</code></pre>
-        <p class="hint">默认暴露 <code>18080</code>（API）与 <code>9200</code>（OpenSearch）。详见仓库 <a href="../README.md">README.md</a>。</p>
+        <p class="hint">默认暴露 <code>18080</code>（API）与 <code>9200</code>（OpenSearch）。详见 <a href="https://github.com/mzniu/ASE/blob/main/README.md" target="_blank" rel="noopener">README.md</a>。</p>
       </div>
     </section>
 
@@ -340,16 +341,16 @@ Invoke-RestMethod -Uri "$base/v1/search" -Method Post -ContentType "application/
       <h2>仓库文档</h2>
       <div class="card">
         <ul>
-          <li><a href="../docs/SEARCH_API_V1.md">API 与产品说明 v1</a></li>
-          <li><a href="../docs/ARCHITECTURE.md">架构概要</a></li>
-          <li><a href="../README.md">README（完整说明）</a></li>
+          <li><a href="https://github.com/mzniu/ASE/blob/main/docs/SEARCH_API_V1.md" target="_blank" rel="noopener">API 与产品说明 v1</a></li>
+          <li><a href="https://github.com/mzniu/ASE/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noopener">架构概要</a></li>
+          <li><a href="https://github.com/mzniu/ASE/blob/main/README.md" target="_blank" rel="noopener">README（完整说明）</a></li>
         </ul>
       </div>
     </section>
 
     <footer>
-      <p>静态页路径：<code>static/index.html</code> — 本地用浏览器打开即可；部署静态站点时将 <code>static/</code> 作为根目录或配置反代。</p>
-      <p>MIT License · 详见仓库 <a href="../LICENSE">LICENSE</a></p>
+      <p>本页由运行中的 ASE 通过 <code>GET /</code> 提供（源码：<code>internal/webcontent/index.html</code>，随二进制嵌入）。离线可克隆仓库后编辑该文件。</p>
+      <p>MIT License · <a href="https://github.com/mzniu/ASE/blob/main/LICENSE" target="_blank" rel="noopener">LICENSE</a></p>
     </footer>
   </div>
 
@@ -410,6 +411,12 @@ Invoke-RestMethod -Uri "$base/v1/search" -Method Post -ContentType "application/
     document.getElementById("btnRegen").addEventListener("click", refresh);
     document.getElementById("base").addEventListener("change", refresh);
     document.getElementById("raw").addEventListener("change", refresh);
+    (function syncBaseFromLocation() {
+      var b = document.getElementById("base");
+      if (b && /^https?:/i.test(window.location.protocol)) {
+        b.value = window.location.origin;
+      }
+    })();
     refresh();
     if (window.location.hash === "#cursor-agent" || window.location.hash === "#install") {
       document.getElementById("install").scrollIntoView();

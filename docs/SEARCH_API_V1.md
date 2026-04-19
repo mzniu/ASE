@@ -52,7 +52,8 @@
 |------|------|------|
 | `POST` | `/v1/search` | 主业务端点；请求体见 §3.3 |
 | `POST` | `/v1/documents` | **可选**：向自建索引写入文档（`id`、`title`、`body_text`）；需配置 OpenSearch；未配置时 **501**；需 Bearer 鉴权，与 `/v1/search` 同属限流组 |
-| `GET` | `/` | **根路径**：`200` + `application/json`，返回服务名与 `/health`、`/v1/search` 等链接说明（无 HTML 门户） |
+| `GET` | `/` | **根路径**：`200` + `text/html`（嵌入式项目主页：介绍、Cursor Skill 配置与示例；源码 `internal/webcontent/index.html`） |
+| `GET` | `/api/info` | **服务发现**：`200` + `application/json`，返回服务名与 `/health`、`/v1/search` 等路径说明（无 HTML） |
 | `GET` | `/health` | **探活**（运维/编排器使用）：**无鉴权**、**不限流**；`200` + `Content-Type: application/json`，body 为 `{"status":"ok"}` |
 | `GET` | `/metrics` | **Prometheus** 指标（如 `ase_search_orchestration_total`）；**无鉴权**、**不限流**（与 `/health` 一致，供抓取器使用） |
 
