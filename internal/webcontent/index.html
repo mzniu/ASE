@@ -203,7 +203,7 @@
         </p>
         <ul>
           <li>同步 API，成功路径为 <code>200</code> + Markdown；错误为 <code>application/problem+json</code>。</li>
-          <li>限流保护 <code>/v1/*</code>；<code>/</code>、<code>/health</code> 与 <code>/metrics</code> 无鉴权、不限流。</li>
+          <li>限流保护 <code>/v1/*</code>；<code>/</code>、<code>/api/info</code>、<code>/health</code>、<code>/metrics</code>、<code>/skills/*</code> 无鉴权、不限流。</li>
           <li>开源许可：<a href="https://github.com/mzniu/ASE/blob/main/LICENSE" target="_blank" rel="noopener">MIT</a>（仓库根目录 <code>LICENSE</code>）。</li>
         </ul>
       </div>
@@ -246,6 +246,9 @@
             <tr><td><code>POST</code></td><td><code>/v1/documents</code></td><td>可选：写入索引字段 <code>id</code> / <code>title</code> / <code>body_text</code>；未配置 OpenSearch 时 <strong>501</strong></td></tr>
             <tr><td><code>GET</code></td><td><code>/health</code></td><td>探活，无鉴权</td></tr>
             <tr><td><code>GET</code></td><td><code>/metrics</code></td><td>Prometheus 文本，无鉴权</td></tr>
+            <tr><td><code>GET</code></td><td><code>/skills/ase-search-api/SKILL.md</code></td><td>Agent Skill 主文件（下载，与 API 同源）</td></tr>
+            <tr><td><code>GET</code></td><td><code>/skills/ase-search-api/reference.md</code></td><td>Skill 参考片段</td></tr>
+            <tr><td><code>GET</code></td><td><code>/skills/ase-search-api/bundle.zip</code></td><td>上述两文件打包</td></tr>
           </tbody>
         </table>
         <p class="hint">完整契约与错误码见 <a href="https://github.com/mzniu/ASE/blob/main/docs/SEARCH_API_V1.md" target="_blank" rel="noopener">docs/SEARCH_API_V1.md</a>（GitHub）。</p>
@@ -287,7 +290,14 @@ description: >-
           <li><strong>Cursor 示例</strong> — Windows：<code>%USERPROFILE%\.cursor\skills\ase-search-api\SKILL.md</code>；macOS/Linux：<code>~/.cursor/skills/ase-search-api/SKILL.md</code>。</li>
           <li><strong>其他产品</strong>：以官方文档为准；保持 <code>SKILL.md</code> 内 YAML 与正文语义不变即可。</li>
         </ul>
-        <p class="hint">若已克隆本仓库，可直接复制 <code>.cursor/skills/ase-search-api/</code> 整目录内容到目标路径；亦可从下方 Raw 地址下载。</p>
+        <h3 id="skill-download">从本站下载（无需 GitHub）</h3>
+        <p>与 API 同源的静态路径（国内网络友好）；浏览器打开本页时与当前服务同主机。</p>
+        <ul>
+          <li><a href="/skills/ase-search-api/SKILL.md"><code>GET /skills/ase-search-api/SKILL.md</code></a></li>
+          <li><a href="/skills/ase-search-api/reference.md"><code>GET /skills/ase-search-api/reference.md</code></a></li>
+          <li><a href="/skills/ase-search-api/bundle.zip"><code>GET /skills/ase-search-api/bundle.zip</code></a>（zip 内含 <code>ase-search-api/</code> 目录）</li>
+        </ul>
+        <p class="hint">若已克隆本仓库，可直接复制 <code>.cursor/skills/ase-search-api/</code>；否则使用上方链接或下方「一键生成」中的 URL（默认与 <strong>ASE_BASE_URL</strong> 一致）。</p>
       </div>
     </section>
 
@@ -298,10 +308,6 @@ description: >-
         <div class="row">
           <label for="base">ASE 服务基址（ASE_BASE_URL）</label>
           <input id="base" type="text" value="http://127.0.0.1:18080" autocomplete="off" />
-        </div>
-        <div class="row">
-          <label for="raw">Skill 的 Raw 根地址（不含末尾斜杠；私有仓可能需改镜像或仅用本地复制）</label>
-          <input id="raw" type="text" value="https://github.com/mzniu/ASE/raw/main" autocomplete="off" />
         </div>
         <textarea id="prompt" class="copybox" readonly></textarea>
         <div class="actions">
@@ -358,9 +364,9 @@ Invoke-RestMethod -Uri "$base/v1/search" -Method Post -ContentType "application/
   <script>
     function buildPrompt() {
       var base = document.getElementById("base").value.trim().replace(/\/$/, "");
-      var rawRoot = document.getElementById("raw").value.trim().replace(/\/$/, "");
-      var skillUrl = rawRoot + "/.cursor/skills/ase-search-api/SKILL.md";
-      var refUrl = rawRoot + "/.cursor/skills/ase-search-api/reference.md";
+      var skillUrl = base + "/skills/ase-search-api/SKILL.md";
+      var refUrl = base + "/skills/ase-search-api/reference.md";
+      var zipUrl = base + "/skills/ase-search-api/bundle.zip";
       return [
         "【任务】为用户安装 ASE 联网搜索技能（Skill）：将 SKILL.md 放到当前 AI Agent / IDE 所要求的技能目录，并（可选）验证服务探活。",
         "",
@@ -377,7 +383,10 @@ Invoke-RestMethod -Uri "$base/v1/search" -Method Post -ContentType "application/
         "",
         "【内容来源】（二选一，优先 A）：",
         "A) 工作区已是 ASE 仓库：从 .cursor/skills/ase-search-api/ 复制 SKILL.md（及 reference.md）。",
-        "B) 从 URL 下载：" + skillUrl + " （参考：" + refUrl + "）",
+        "B) 从当前 ASE 服务下载（与 ASE_BASE_URL 同源，无需 GitHub）：",
+        "   - SKILL.md：" + skillUrl,
+        "   - reference.md：" + refUrl,
+        "   - 打包 zip：" + zipUrl,
         "",
         "【服务】基址（ASE_BASE_URL）：" + base,
         "【鉴权】API Key 仅从用户或环境变量 ASE_API_KEY / DEV_API_KEY 读取，不要编造或打印完整密钥。",
@@ -388,8 +397,8 @@ Invoke-RestMethod -Uri "$base/v1/search" -Method Post -ContentType "application/
       ].join("\n");
     }
     function buildPs() {
-      var rawRoot = document.getElementById("raw").value.trim().replace(/\/$/, "");
-      var skillUrl = rawRoot + "/.cursor/skills/ase-search-api/SKILL.md";
+      var base = document.getElementById("base").value.trim().replace(/\/$/, "");
+      var skillUrl = base + "/skills/ase-search-api/SKILL.md";
       return [
         "# 将 $dir 改为你的 Agent 要求的目录；以下为 Cursor 示例路径",
         "$dir = Join-Path $env:USERPROFILE \".cursor\\skills\\ase-search-api\"",
@@ -419,7 +428,6 @@ Invoke-RestMethod -Uri "$base/v1/search" -Method Post -ContentType "application/
     });
     document.getElementById("btnRegen").addEventListener("click", refresh);
     document.getElementById("base").addEventListener("change", refresh);
-    document.getElementById("raw").addEventListener("change", refresh);
     (function syncBaseFromLocation() {
       var b = document.getElementById("base");
       if (b && /^https?:/i.test(window.location.protocol)) {

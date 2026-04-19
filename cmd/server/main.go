@@ -97,6 +97,11 @@ func main() {
 	r.Get("/health", handler.Health)
 	r.Handle("/metrics", promhttp.Handler())
 
+	// Agent skill files (embedded; no GitHub) — same auth model as /health
+	r.Get("/skills/ase-search-api/SKILL.md", handler.SkillSKILLMD)
+	r.Get("/skills/ase-search-api/reference.md", handler.SkillReferenceMD)
+	r.Get("/skills/ase-search-api/bundle.zip", handler.SkillBundleZIP)
+
 	r.Group(func(r chi.Router) {
 		r.Use(apimw.RateLimit(cfg))
 		r.Route("/v1", func(r chi.Router) {

@@ -56,6 +56,9 @@
 | `GET` | `/api/info` | **服务发现**：`200` + `application/json`，返回服务名与 `/health`、`/v1/search` 等路径说明（无 HTML） |
 | `GET` | `/health` | **探活**（运维/编排器使用）：**无鉴权**、**不限流**；`200` + `Content-Type: application/json`，body 为 `{"status":"ok"}` |
 | `GET` | `/metrics` | **Prometheus** 指标（如 `ase_search_orchestration_total`）；**无鉴权**、**不限流**（与 `/health` 一致，供抓取器使用） |
+| `GET` | `/skills/ase-search-api/SKILL.md` | **Agent Skill** 主文件（嵌入二进制）；**无鉴权**、**不限流**；`text/markdown`，`Content-Disposition: attachment` |
+| `GET` | `/skills/ase-search-api/reference.md` | 同上，参考片段 |
+| `GET` | `/skills/ase-search-api/bundle.zip` | zip 内含 `ase-search-api/SKILL.md` 与 `ase-search-api/reference.md`；便于一次下载 |
 
 用量查询等端点若需要可在网关或内网扩展。
 
