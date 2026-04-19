@@ -1,0 +1,21 @@
+name: 功能建议
+description: 讨论新功能或改进（范围变更可能需先更新立项文档）
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 要解决什么问题？
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案（可选）
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: 范围感知
+      options:
+        - label: 我认为这属于当前 MVP / 路线图内
+        - label: 这可能影响对外 API 契约（需改 SEARCH_API_V1）

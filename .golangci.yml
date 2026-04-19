@@ -1,0 +1,11 @@
+# 可选：安装 golangci-lint 后执行 golangci-lint run
+# https://golangci-lint.run/
+run:
+  timeout: 5m
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused

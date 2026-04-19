@@ -1,0 +1,38 @@
+name: Bug 报告
+description: 描述可复现的问题
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请尽量提供复现步骤与环境信息。若与某条需求相关，请注明 `REQ-*` ID（见仓库内 `docs/SRS.md`）。
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. …
+        2. …
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: 提交 SHA 或版本标签
+  - type: textarea
+    id: env
+    attributes:
+      label: 环境
+      description: OS、运行时版本、是否 Docker 等

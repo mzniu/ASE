@@ -1,0 +1,13 @@
+.git
+.github
+.env
+.env.*
+!.env.example
+.cache
+*.md
+docs
+scripts
+docker-compose*.yml
+Dockerfile
+.editorconfig
+Makefile

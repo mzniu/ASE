@@ -1,0 +1,5 @@
+# Shell 脚本在 Linux CI 上必须为 LF
+*.sh text eol=lf
+
+# Go 源码使用 LF，避免 gofmt 与 Windows CRLF 冲突
+*.go text eol=lf

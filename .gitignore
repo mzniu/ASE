@@ -1,0 +1,28 @@
+# 环境与本机密钥（勿提交）
+.env
+.env.*
+!.env.example
+
+# 常见构建与缓存（按技术栈增删）
+dist/
+build/
+target/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+node_modules/
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# 本地下载的 Go SDK（zip 解压，勿提交）
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db

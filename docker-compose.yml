@@ -1,0 +1,17 @@
+# Local development: single-node OpenSearch (plugins.security.disabled — dev only, do not expose publicly).
+# Usage: docker compose up -d opensearch
+# Then set OPENSEARCH_URLS=http://localhost:9200 OPENSEARCH_INDEX=ase_documents (security disabled → HTTP).
+services:
+  opensearch:
+    image: opensearchproject/opensearch:2.17.0
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+
+volumes:
+  opensearch-data: {}
