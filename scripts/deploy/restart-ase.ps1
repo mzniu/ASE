@@ -43,10 +43,8 @@ function Invoke-DockerCompose {
     param([Parameter(Mandatory)][string[]] $ComposeArgs)
     if (Test-DockerComposePlugin) {
         & docker compose @ComposeArgs
-    } elseif (Get-Command docker-compose -ErrorAction SilentlyContinue) {
-        & docker-compose @ComposeArgs
     } else {
-        Write-Error "未检测到 Docker Compose（需要 docker compose 或 docker-compose）。"
+        Write-Error "未检测到 Docker Compose V2（请执行: docker compose version）。勿使用旧版 docker-compose 1.x（Linux 上 Docker 24+ 易出现 KeyError ContainerConfig）。"
     }
 }
 

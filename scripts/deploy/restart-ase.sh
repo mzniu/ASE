@@ -5,7 +5,8 @@
 # 行为：git 拉取 → 先构建 ase 镜像（旧容器继续服务，中断时间短）→ 再 up --force-recreate 轮换容器。
 # OpenSearch 不重建、默认保持运行（docker compose --no-deps）。
 #
-# 依赖：git、Docker Compose v2（docker compose）或 docker-compose。
+# 依赖：Docker Compose **V2**（`docker compose` 插件）。勿使用旧版 Python `docker-compose` 1.x：
+# 在 Docker Engine 24+ 上易出现 KeyError: 'ContainerConfig'（见 docs/DEPLOY_LINUX_VM.md）。
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -14,10 +15,9 @@ cd "$ROOT"
 docker_compose() {
 	if docker compose version >/dev/null 2>&1; then
 		docker compose "$@"
-	elif command -v docker-compose >/dev/null 2>&1; then
-		docker-compose "$@"
 	else
-		echo "未检测到 Docker Compose。"
+		echo "未检测到 Docker Compose V2（docker compose）。旧版 docker-compose 1.x 与新版 Docker 不兼容，请勿使用。" >&2
+		echo "安装示例（Debian/Ubuntu）：sudo apt-get update && sudo apt-get install -y docker-compose-plugin && docker compose version" >&2
 		exit 1
 	fi
 }

@@ -6,9 +6,9 @@
 
 - 虚机建议 **≥ 2 vCPU、≥ 4 GB RAM**（OpenSearch JVM 约 256 MB，留余量给系统与其它进程）。
 - 开放云安全组 / NSG **入站**：**22**（SSH）、**18080**（ASE HTTP，若仅内网访问可限制来源 IP）。
-- 本机安装 **Git**、**Docker Engine** 与 **Docker Compose**（二选一即可）：
-  - **推荐（Compose V2 插件）**：`sudo apt-get install -y docker-compose-plugin`，确认 `docker compose version`。
-  - 若仅有旧版 `docker-compose` 命令，`scripts/deploy/vm-install.sh` 也会自动改用。
+- 本机安装 **Git**、**Docker Engine** 与 **Docker Compose V2 插件**（**必须**能执行 `docker compose`，勿依赖旧版独立命令 `docker-compose`）：
+  - **安装**：`sudo apt-get install -y docker-compose-plugin`，确认 **`docker compose version`**（注意是子命令 `compose`，带空格）。
+  - 若只装了 Python 版 **`docker-compose` 1.29.x**，在新版 Docker Engine（如 24+）上执行 `up` 可能报错 **`KeyError: 'ContainerConfig'`**，请改用 Compose V2 或卸载旧包后仅保留插件（见下文 §9）。
 - 安装 Docker 后，**把登录用户加入 `docker` 组**，否则会出现 `Permission denied` 访问套接字：
   ```bash
   sudo usermod -aG docker "$USER"
@@ -103,6 +103,28 @@ cd /opt/ase
 git pull
 docker compose up --build -d
 ```
+
+## 9. 故障：`KeyError: 'ContainerConfig'`（旧版 `docker-compose`）
+
+**现象**：使用 **`docker-compose`**（Compose **V1**，如 1.29.2）在 **`docker compose up`** / 重建容器时崩溃，栈中出现 `container.image_config['ContainerConfig']`。
+
+**原因**：Compose V1 与较新的 Docker Engine 镜像元数据不兼容。
+
+**处理**（任选其一，推荐前两条）：
+
+1. 安装 **Compose V2 插件**，之后一律使用 **`docker compose`**（中间有空格）：
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y docker-compose-plugin
+   docker compose version
+   ```
+2. 在仓库根目录用 **`docker compose`** 重试（不要用 `docker-compose`）：
+   ```bash
+   docker compose up --build -d
+   ```
+3. 可选：移除旧的独立包，避免误用（包名因发行版而异，请先 `dpkg -l | grep -i compose` 再卸载）。
+
+仓库内 **`scripts/deploy/vm-install.sh`**、**`scripts/deploy/restart-ase.sh`** 仅调用 **`docker compose`**，不再回退到 V1。
 
 ---
 

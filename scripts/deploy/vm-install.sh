@@ -22,16 +22,13 @@ if ! docker info >/dev/null 2>&1; then
 	exit 1
 fi
 
-# Compose V2：docker compose（需 docker-compose-plugin）；旧环境可能是 docker-compose 独立命令
+# Compose V2：docker compose（需 docker-compose-plugin）。勿依赖旧版 Python docker-compose 1.x（Docker 24+ 下易 KeyError: ContainerConfig）。
 docker_compose() {
 	if docker compose version >/dev/null 2>&1; then
 		docker compose "$@"
-	elif command -v docker-compose >/dev/null 2>&1; then
-		docker-compose "$@"
 	else
-		echo "未检测到 Docker Compose。"
-		echo "Ubuntu/Debian 推荐：sudo apt-get update && sudo apt-get install -y docker-compose-plugin"
-		echo "然后确认：docker compose version"
+		echo "未检测到 Docker Compose V2（docker compose）。"
+		echo "Ubuntu/Debian：sudo apt-get update && sudo apt-get install -y docker-compose-plugin && docker compose version"
 		exit 1
 	fi
 }
