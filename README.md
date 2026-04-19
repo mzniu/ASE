@@ -2,7 +2,7 @@
 
 为开发者提供 **无状态 REST API**：使用用户级 API Key 调用 **`POST /v1/search`**，返回经整理的 **Markdown**，供 Agent / AI 工具作为联网检索上下文使用。
 
-本仓库代码将托管于 **GitHub**；开发与合并请求须遵循 **TDD（测试驱动开发）** 与 [CONTRIBUTING.md](./CONTRIBUTING.md) 中的约定。
+源码仓库：**[github.com/mzniu/ASE](https://github.com/mzniu/ASE)**（私有仓库需相应权限）。开发与合并请求须遵循 **TDD（测试驱动开发）** 与 [CONTRIBUTING.md](./CONTRIBUTING.md) 中的约定。
 
 ---
 
@@ -31,7 +31,16 @@
 
 ### OpenSearch（索引优先，REQ-F-006）
 
-同时配置 **`OPENSEARCH_URLS`**（逗号分隔，如 `https://search.example:9200`）与 **`OPENSEARCH_INDEX`** 后，服务使用 [opensearch-go](https://github.com/opensearch-project/opensearch-go) 对索引字段 **`title`**、**`body_text`** 做 `multi_match` 检索；可选 **`OPENSEARCH_USER`** / **`OPENSEARCH_PASSWORD`**（HTTP Basic）、**`OPENSEARCH_SEARCH_SIZE`**（默认 10）。未配置两项时回退为内存空索引（与此前行为一致）。映射与查询约定见 [docs/DETAILED_DESIGN.md](./docs/DETAILED_DESIGN.md) §6.3。配置 OpenSearch 后可用 **`POST /v1/documents`** 写入文档（见 [SEARCH_API_V1.md](./docs/SEARCH_API_V1.md)）；**`GET /metrics`** 暴露 Prometheus 指标（如 `ase_search_orchestration_total`）。
+同时配置 **`OPENSEARCH_URLS`**（逗号分隔，如 `https://search.example:9200`）与 **`OPENSEARCH_INDEX`** 后，服务使用 [opensearch-go](https://github.com/opensearch-project/opensearch-go) 对索引字段 **`title`**、**`body_text`** 做 `multi_match` 检索；可选 **`OPENSEARCH_USER`** / **`OPENSEARCH_PASSWORD`**（HTTP Basic）、**`OPENSEARCH_SEARCH_SIZE`**（默认 10）。未配置两项时回退为内存空索引（与此前行为一致）。映射与查询约定见 [docs/DETAILED_DESIGN.md](./docs/DETAILED_DESIGN.md) §6.3。
+
+### 端点一览（v1）
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/v1/search` | 主业务：JSON 查询 → Markdown（需 Bearer） |
+| `POST` | `/v1/documents` | 可选：向索引写入 `id` / `title` / `body_text`；未配置 OpenSearch 时 **501**（详见 [SEARCH_API_V1.md](./docs/SEARCH_API_V1.md)） |
+| `GET` | `/health` | 探活 JSON，**无鉴权**、**不限流** |
+| `GET` | `/metrics` | **Prometheus** 文本指标（如 `ase_search_orchestration_total`），**无鉴权**、**不限流** |
 
 ## 快速开始
 
@@ -44,10 +53,10 @@ go env -w GOPROXY=https://goproxy.cn,direct
 ```
 
 ```bash
-# 将模块路径换成你的 GitHub 仓库（示例）
-# go mod edit -module=github.com/ORG/ase
+# 当前 go.mod 模块名为 github.com/example/ase；若 fork 到自己的仓库可改为例如：
+# go mod edit -module=github.com/mzniu/ASE && go mod tidy
 
-make check          # gofmt 检查 + go vet + go test（与 CI 一致）
+make check          # gofmt 检查 + go vet + go test（与 CI 一致；CI 中 Go 版本与 go.mod 对齐）
 # 或：go fmt ./... && go vet ./... && go test ./...
 go run ./cmd/server
 # 另开终端：需 DEV_API_KEY 时
@@ -57,9 +66,15 @@ go run ./cmd/server
 
 环境变量见 [.env.example](./.env.example)。在仓库根目录放置 **`.env`**（勿提交）时，启动时会 **优先用 `.env` 覆盖同名环境变量**（`godotenv.Overload`），避免 Windows「用户/系统环境变量」里残留的 **`TAVILY_API_KEY=`** 或旧值导致 **`.env` 不生效**（若仅用 `Load`，已存在的键不会被文件覆盖）。请从仓库根目录执行 `go run ./cmd/server`，且 `.env` 建议保存为 **UTF-8 无 BOM**，以免首行键名异常。**生产环境须配置真实 API Key 校验策略**，勿依赖「未设置 `DEV_API_KEY` 则任意 Bearer 通过」的开发行为。
 
-### 探活
+### 探活与指标
 
 **`GET /health`** 返回 `{"status":"ok"}`（JSON），**不需要** Bearer，且 **不计入** 业务限流，便于 K8s / 负载均衡探针。
+
+**`GET /metrics`** 供 Prometheus 抓取（搜索编排结果计数等），同样 **无鉴权**、**不在** `/v1` 限流组内。
+
+### 可选：OpenSearch 集成测试
+
+已配置 **`OPENSEARCH_URLS`** 等环境变量时，可在本地执行 **`bash scripts/run-integration.sh`**（`go test -tags=integration`，见 `internal/adapter/opensearch/integration_test.go`）。未配置时会 **跳过** 相关用例。
 
 ### 多搜索引擎（浏览器 + Tavily）
 
@@ -86,4 +101,4 @@ go run ./cmd/server
 
 ## 许可证
 
-待定（在仓库根目录添加 `LICENSE` 后更新本段）。
+本项目采用 **[MIT License](./LICENSE)**（Copyright © 2026 Mingzhu Niu）。使用或分发时请保留许可证全文及版权声明。
