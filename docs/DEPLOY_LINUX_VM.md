@@ -6,7 +6,9 @@
 
 - 虚机建议 **≥ 2 vCPU、≥ 4 GB RAM**（OpenSearch JVM 约 256 MB，留余量给系统与其它进程）。
 - 开放云安全组 / NSG **入站**：**22**（SSH）、**18080**（ASE HTTP，若仅内网访问可限制来源 IP）。
-- 本机安装 **Git**、**Docker Engine** 与 **Docker Compose V2**（`docker compose version` 可用）。
+- 本机安装 **Git**、**Docker Engine** 与 **Docker Compose**（二选一即可）：
+  - **推荐（Compose V2 插件）**：`sudo apt-get install -y docker-compose-plugin`，确认 `docker compose version`。
+  - 若仅有旧版 `docker-compose` 命令，`scripts/deploy/vm-install.sh` 也会自动改用。
 
 ## 2. 获取代码
 
@@ -63,6 +65,16 @@ sudo ufw status
 ```bash
 bash scripts/deploy/vm-install.sh
 ```
+
+若出现 **`unknown flag: --build`** 或 **`docker: 'compose' is not a docker command`**，说明未安装 Compose V2 插件，请先执行：
+
+```bash
+sudo apt-get update
+sudo apt-get install -y docker-compose-plugin
+docker compose version
+```
+
+然后再运行 `vm-install.sh`。
 
 或手动：
 
