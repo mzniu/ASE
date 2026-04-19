@@ -22,6 +22,7 @@
 | [SDLC](docs/SDLC.md) | 生命周期、发布与回滚检查清单 |
 | [文档编写规范](docs/DOCUMENTATION_STANDARDS.md) | 文档维护责任与版本表规则 |
 | [文档索引](docs/README.md) | 全量文档列表与维护责任 |
+| [Linux 虚机部署（Docker）](docs/DEPLOY_LINUX_VM.md) | SSH 登录后在目标机克隆仓库、`docker compose` 与防火墙要点 |
 | [安全策略](SECURITY.md) | 漏洞报告渠道（发布前替换占位仓库名） |
 
 ---

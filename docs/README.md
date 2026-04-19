@@ -24,6 +24,7 @@
 | [ROUTER_FRAMEWORK_EVALUATION.md](./ROUTER_FRAMEWORK_EVALUATION.md) | **chi / gin / echo** 评估与选型记录 |
 | [TESTING_AND_TDD.md](./TESTING_AND_TDD.md) | **TDD** 流程、测试分层、覆盖率、CI 策略 |
 | [GITHUB_WORKFLOW.md](./GITHUB_WORKFLOW.md) | 分支保护、Actions、Secrets、Dependabot |
+| [DEPLOY_LINUX_VM.md](./DEPLOY_LINUX_VM.md) | **Linux 虚机**：Docker Compose 部署、防火墙与安全组 |
 | [SDLC.md](./SDLC.md) | 生命周期、发布与回滚、合并门禁 |
 | [DOCUMENTATION_STANDARDS.md](./DOCUMENTATION_STANDARDS.md) | 文档维护规则与版本表 |
 

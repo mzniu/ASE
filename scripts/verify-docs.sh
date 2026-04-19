@@ -20,6 +20,7 @@ REQUIRED=(
   "docs/TESTING_AND_TDD.md"
   "docs/GITHUB_WORKFLOW.md"
   "docs/DOCUMENTATION_STANDARDS.md"
+  "docs/DEPLOY_LINUX_VM.md"
 )
 
 missing=0
