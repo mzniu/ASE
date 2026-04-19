@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+.secrets
 
 # 常见构建与缓存（按技术栈增删）
 dist/
