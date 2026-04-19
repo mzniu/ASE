@@ -95,7 +95,15 @@ go run ./cmd/server
 ### Docker 与本地 OpenSearch
 
 - **镜像构建**：仓库根目录 **`Dockerfile`**（多阶段构建，产物为单二进制；需联网依赖时使用 **distroless base** 镜像以携带 CA）。
-- **本地索引**：**`docker compose up -d opensearch`**（见 **`docker-compose.yml`**）可启动单节点 OpenSearch（**开发用**，已关闭安全插件）。配置示例：`OPENSEARCH_URLS=http://localhost:9200`、`OPENSEARCH_INDEX=ase_documents`。索引映射与查询约定见 [docs/DETAILED_DESIGN.md](./docs/DETAILED_DESIGN.md) §6.3。
+- **一次编排（API + OpenSearch）**：在仓库根目录执行 **`docker compose up --build -d`**。会启动 **`opensearch`**（9200）与 **`ase`**（18080）；API 在容器网络内使用 **`OPENSEARCH_URLS=http://opensearch:9200`**，并等待 OpenSearch **健康检查通过**后再启动 ASE。默认 **`SEARCH_DEFAULT_PROVIDERS=stub`**、**`DEV_API_KEY=dev-only`**（可在 `docker-compose.yml` 中改写或通过 **override** 注入真实 Tavily 等变量）。
+- **仅索引节点（旧用法）**：**`docker compose up -d opensearch`**，宿主机上 **`OPENSEARCH_URLS=http://localhost:9200`** 连接。索引映射与查询约定见 [docs/DETAILED_DESIGN.md](./docs/DETAILED_DESIGN.md) §6.3。
+
+编排启动后可探活并试搜（与 compose 中默认 Key 一致）：
+
+```bash
+curl -sS http://127.0.0.1:18080/health
+curl -sS -X POST http://127.0.0.1:18080/v1/search -H "Content-Type: application/json" -H "Authorization: Bearer dev-only" -d '{"query":"hello"}'
+```
 
 ---
 

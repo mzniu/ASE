@@ -1,6 +1,8 @@
-# Local development: single-node OpenSearch (plugins.security.disabled — dev only, do not expose publicly).
-# Usage: docker compose up -d opensearch
-# Then set OPENSEARCH_URLS=http://localhost:9200 OPENSEARCH_INDEX=ase_documents (security disabled → HTTP).
+# 一次编排：OpenSearch + ASE API（默认网络内 API 通过 http://opensearch:9200 访问索引）。
+# 用法：docker compose up --build -d
+# 仅索引（旧行为）：docker compose up -d opensearch
+#
+# OpenSearch 为开发向配置（plugins.security.disabled — 勿对公网暴露）。
 services:
   opensearch:
     image: opensearchproject/opensearch:2.17.0
@@ -12,6 +14,27 @@ services:
       - "9200:9200"
     volumes:
       - opensearch-data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9200 >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 90s
+
+  ase:
+    build: .
+    ports:
+      - "18080:18080"
+    environment:
+      HTTP_ADDR: ":18080"
+      OPENSEARCH_URLS: "http://opensearch:9200"
+      OPENSEARCH_INDEX: "ase_documents"
+      # 默认可在无 Tavily/浏览器依赖下用 stub 做回落验证；生产请改为真实 providers
+      SEARCH_DEFAULT_PROVIDERS: "stub"
+      DEV_API_KEY: "dev-only"
+    depends_on:
+      opensearch:
+        condition: service_healthy
 
 volumes:
   opensearch-data: {}
