@@ -108,7 +108,9 @@ curl -sS -X POST http://127.0.0.1:18080/v1/search -H "Content-Type: application/
 
 #### OpenSearch 容器立刻退出（exit 1）时
 
-1. **看日志**：`docker logs ase-opensearch-1`（容器名以 `docker compose ps` 为准），常见为 `max virtual memory areas vm.max_map_count ... is too low` 或内存/bootstrap 相关报错。  
+1. **看日志**：`docker logs ase-opensearch-1`（容器名以 `docker compose ps` 为准）。  
+   - 若出现 **`OPENSEARCH_INITIAL_ADMIN_PASSWORD`**：OpenSearch 2.12+ 要求该变量（仓库内 `docker-compose.yml` 已内置开发用密码）；请 **`git pull`** 后重新 `docker compose up`。  
+   - 若出现 **`vm.max_map_count`** 或内存/bootstrap 相关报错，见下文。  
 2. **提高 vm.max_map_count**（Docker Desktop 使用 WSL2 时，在 **PowerShell** 执行，发行版名可用 `wsl -l -v` 查看）：
 
 ```powershell

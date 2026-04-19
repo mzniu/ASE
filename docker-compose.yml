@@ -24,6 +24,9 @@ services:
     environment:
       - discovery.type=single-node
       - plugins.security.disabled=true
+      # OpenSearch 2.12+：镜像启动脚本仍要求设置（即使已禁用安全插件），否则 install_demo_configuration 直接退出
+      # 仅用于本地/内网开发；生产请使用正式安全策略，勿对公网暴露无 TLS 的节点
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=AseDev-local-2026!ChangeMe
       # 单机开发用较小堆，降低小内存机器上 OOM 概率
       - OPENSEARCH_JAVA_OPTS=-Xms256m -Xmx256m
       # 避免小磁盘/开发环境触发高水位导致分片分配失败
