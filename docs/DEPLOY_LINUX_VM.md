@@ -152,6 +152,23 @@ docker compose up --build -d
 
 仓库内 **`scripts/deploy/vm-install.sh`**、**`scripts/deploy/restart-ase.sh`** 仅调用 **`docker compose`**，不再回退到 V1。
 
+## 10. 故障：`failed to load listeners: no sockets found via socket activation`
+
+**现象**：`journalctl -u docker.service` 中出现上述错误，`docker.service` 反复失败。
+
+**原因**：`dockerd` 使用 **systemd socket 激活**（`-H fd://`）时，需先由 **`docker.socket`** 创建监听套接字；若只启动了 `docker.service` 或 **`docker.socket` 未启用/失败**，则会出现该报错。
+
+**处理**：
+
+```bash
+sudo systemctl enable docker.socket
+sudo systemctl start docker.socket
+sudo systemctl start docker.service
+docker info
+```
+
+若 `docker.socket` 仍失败，查看：`sudo journalctl -u docker.socket -n 50 --no-pager`。
+
 ---
 
 | 文档 | 说明 |
