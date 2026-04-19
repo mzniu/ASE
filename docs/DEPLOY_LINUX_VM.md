@@ -7,13 +7,49 @@
 - 虚机建议 **≥ 2 vCPU、≥ 4 GB RAM**（OpenSearch JVM 约 256 MB，留余量给系统与其它进程）。
 - 开放云安全组 / NSG **入站**：**22**（SSH）、**18080**（ASE HTTP，若仅内网访问可限制来源 IP）。
 - 本机安装 **Git**、**Docker Engine** 与 **Docker Compose V2 插件**（**必须**能执行 `docker compose`，勿依赖旧版独立命令 `docker-compose`）：
-  - **安装**：`sudo apt-get install -y docker-compose-plugin`，确认 **`docker compose version`**（注意是子命令 `compose`，带空格）。
+  - **安装**：见下文 **§1.1**（若直接 `apt install docker-compose-plugin` 报 *Unable to locate package*，说明未配置 Docker 官方源，或改用 **手动安装插件二进制**）。
   - 若只装了 Python 版 **`docker-compose` 1.29.x**，在新版 Docker Engine（如 24+）上执行 `up` 可能报错 **`KeyError: 'ContainerConfig'`**，请改用 Compose V2 或卸载旧包后仅保留插件（见下文 §9）。
 - 安装 Docker 后，**把登录用户加入 `docker` 组**，否则会出现 `Permission denied` 访问套接字：
   ```bash
   sudo usermod -aG docker "$USER"
   ```
   然后 **退出 SSH 再登录**，或执行 `newgrp docker`，再运行 `docker info` 确认无报错。
+
+### 1.1 安装 Compose V2（`Unable to locate package docker-compose-plugin` 时）
+
+发行版自带的 `apt` **不一定**包含 `docker-compose-plugin`，需任选其一。
+
+**方式 A — 已用 Docker 官方仓库装过 `docker-ce` 的**：直接再装插件即可：
+
+```bash
+sudo apt-get update
+sudo apt-get install -y docker-compose-plugin
+docker compose version
+```
+
+**方式 B — 尚未添加 Docker 官方 APT 源**：按 Docker 文档为 **Ubuntu** 或 **Debian** 添加 `download.docker.com` 源后再安装 `docker-compose-plugin`（与安装 `docker-ce` 相同流程）。官方索引：<https://docs.docker.com/engine/install/>（选你的发行版，跟「Set up Docker’s apt repository」步骤）。
+
+**方式 C — 仅手动安装 Compose 插件（不依赖 apt 包名）**：从 GitHub 发布页下载二进制到 Docker **CLI 插件目录**（需已安装 `docker` 命令）：
+
+```bash
+# 版本号可到 https://github.com/docker/compose/releases 取最新 v2.x
+COMPOSE_VER=v2.29.7
+ARCH=$(uname -m)
+case "$ARCH" in x86_64) DARCH=x86_64 ;; aarch64|arm64) DARCH=aarch64 ;; *) echo "unsupported: $ARCH"; exit 1 ;; esac
+sudo mkdir -p /usr/local/lib/docker/cli-plugins
+sudo curl -fsSL "https://github.com/docker/compose/releases/download/${COMPOSE_VER}/docker-compose-linux-${DARCH}" \
+  -o /usr/local/lib/docker/cli-plugins/docker-compose
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+docker compose version
+```
+
+若 `docker compose version` 仍失败，可改为当前用户目录插件（再执行 `docker compose version`）：
+
+```bash
+mkdir -p ~/.docker/cli-plugins
+cp /usr/local/lib/docker/cli-plugins/docker-compose ~/.docker/cli-plugins/ 2>/dev/null || true
+# 或直接把上面 curl 目标改为 ~/.docker/cli-plugins/docker-compose 后 chmod +x
+```
 
 ## 2. 获取代码
 
@@ -71,15 +107,7 @@ sudo ufw status
 bash scripts/deploy/vm-install.sh
 ```
 
-若出现 **`unknown flag: --build`** 或 **`docker: 'compose' is not a docker command`**，说明未安装 Compose V2 插件，请先执行：
-
-```bash
-sudo apt-get update
-sudo apt-get install -y docker-compose-plugin
-docker compose version
-```
-
-然后再运行 `vm-install.sh`。
+若出现 **`unknown flag: --build`** 或 **`docker: 'compose' is not a docker command`**，说明未安装 Compose V2 插件，请按 **§1.1** 安装后再运行 `vm-install.sh`。
 
 若出现 **`PermissionError: ... docker.sock`** 或 **`Permission denied`**（访问 Docker 套接字），见上文「把用户加入 docker 组」，或使用 **`sudo bash scripts/deploy/vm-install.sh`** 临时部署。
 
@@ -112,10 +140,8 @@ docker compose up --build -d
 
 **处理**（任选其一，推荐前两条）：
 
-1. 安装 **Compose V2 插件**，之后一律使用 **`docker compose`**（中间有空格）：
+1. 安装 **Compose V2 插件**（`apt` 找不到包时见 **§1.1**），之后一律使用 **`docker compose`**（中间有空格）：
    ```bash
-   sudo apt-get update
-   sudo apt-get install -y docker-compose-plugin
    docker compose version
    ```
 2. 在仓库根目录用 **`docker compose`** 重试（不要用 `docker-compose`）：
