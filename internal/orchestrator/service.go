@@ -36,7 +36,8 @@ type Service struct {
 // SearchMarkdown returns final Markdown for POST /v1/search.
 // providers is optional: nil or empty means DefaultNames; names are case-insensitive (e.g. baidu, bing).
 // deepSearch: nil uses Config.ProviderFetchResultURLs; if set, overrides per request (result URL fetch / REQ-F-012).
-func (s *Service) SearchMarkdown(ctx context.Context, query string, providers []string, deepSearch *bool) (string, error) {
+// indexWrite: nil or true allows async index write-back when Config.SearchIndexWriteBackEnabled; false opts out for this request only.
+func (s *Service) SearchMarkdown(ctx context.Context, query string, providers []string, deepSearch *bool, indexWrite *bool) (string, error) {
 	rid := middleware.GetReqID(ctx)
 	if rid == "" {
 		rid = "-"
@@ -122,7 +123,8 @@ func (s *Service) SearchMarkdown(ctx context.Context, query string, providers []
 		"out_runes", utf8.RuneCountInString(md),
 		"duration_ms", time.Since(start).Milliseconds(),
 	)
-	s.scheduleProviderIndexWriteBack(query, md, rid)
+	allowWB := s.Config.SearchIndexWriteBackEnabled && (indexWrite == nil || *indexWrite)
+	s.scheduleProviderIndexWriteBack(query, md, rid, allowWB)
 	return md, nil
 }
 

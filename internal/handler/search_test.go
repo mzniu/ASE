@@ -76,15 +76,15 @@ func TestSearch_POST_withValidKey_returns200Markdown(t *testing.T) {
 
 func TestSearch_emptyQuery_returns400(t *testing.T) {
 	cfg := config.Config{
-		MaxQueryRunes:    4096,
-		MaxResponseRunes: 16000,
-		RequestDeadline:  time.Minute,
-		MinHitCount:      1,
-		MinTotalTextLen:  1,
-		MinSimilarity:    0,
-		RateLimitGlobal:  1000,
-		RateLimitPerKey:  1000,
-		RateLimitBurst:   2000,
+		MaxQueryRunes:        4096,
+		MaxResponseRunes:     16000,
+		RequestDeadline:      time.Minute,
+		MinHitCount:          1,
+		MinTotalTextLen:      1,
+		MinSimilarity:        0,
+		RateLimitGlobal:      1000,
+		RateLimitPerKey:      1000,
+		RateLimitBurst:       2000,
 		RateLimitGlobalBurst: 2000,
 	}
 	h := testSearch(t, cfg)
@@ -106,7 +106,7 @@ type fakeSearcher struct {
 	err error
 }
 
-func (f *fakeSearcher) SearchMarkdown(_ context.Context, _ string, _ []string, _ *bool) (string, error) {
+func (f *fakeSearcher) SearchMarkdown(_ context.Context, _ string, _ []string, _ *bool, _ *bool) (string, error) {
 	return f.md, f.err
 }
 
@@ -114,8 +114,17 @@ type deepSearchSpy struct {
 	got *bool
 }
 
-func (d *deepSearchSpy) SearchMarkdown(_ context.Context, _ string, _ []string, deep *bool) (string, error) {
+func (d *deepSearchSpy) SearchMarkdown(_ context.Context, _ string, _ []string, deep *bool, _ *bool) (string, error) {
 	d.got = deep
+	return "ok", nil
+}
+
+type indexWriteSpy struct {
+	got *bool
+}
+
+func (d *indexWriteSpy) SearchMarkdown(_ context.Context, _ string, _ []string, _ *bool, iw *bool) (string, error) {
+	d.got = iw
 	return "ok", nil
 }
 
@@ -137,6 +146,28 @@ func TestSearch_deepsearch_passedToOrchestrator(t *testing.T) {
 	}
 	if spy.got == nil || !*spy.got {
 		t.Fatalf("deepSearch = %v", spy.got)
+	}
+}
+
+func TestSearch_indexWrite_passedToOrchestrator(t *testing.T) {
+	t.Setenv("DEV_API_KEY", "secret-key")
+	cfg := config.Load()
+	spy := &indexWriteSpy{}
+	h := handler.NewSearch(cfg, spy)
+
+	off := false
+	body := map[string]any{"query": "hi", "index_write": off}
+	raw, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/v1/search", bytes.NewReader(raw))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer secret-key")
+	rr := httptest.NewRecorder()
+	h.Handle(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d", rr.Code)
+	}
+	if spy.got == nil || *spy.got {
+		t.Fatalf("indexWrite = %v want false", spy.got)
 	}
 }
 

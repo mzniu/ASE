@@ -83,7 +83,7 @@ func TestService_indexEnough_skipsProvider(t *testing.T) {
 			RequestDeadline:  time.Minute,
 		},
 	}
-	md, err := svc.SearchMarkdown(context.Background(), "q", nil, nil)
+	md, err := svc.SearchMarkdown(context.Background(), "q", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func TestService_fallback_callsProvider(t *testing.T) {
 			RequestDeadline:  time.Minute,
 		},
 	}
-	_, err := svc.SearchMarkdown(context.Background(), "q", nil, nil)
+	_, err := svc.SearchMarkdown(context.Background(), "q", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestService_providerFetch_enrichesMarkdown(t *testing.T) {
 			RequestDeadline:         time.Minute,
 		},
 	}
-	md, err := svc.SearchMarkdown(context.Background(), "q", nil, nil)
+	md, err := svc.SearchMarkdown(context.Background(), "q", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,8 +163,8 @@ func TestService_deepSearch_overridesProviderFetch(t *testing.T) {
 	fetcher := fixedFetcher{pages: []port.FetchedPage{{URL: "https://example.com/a", Text: "deep body"}}}
 	base := func(fetchCfg bool) *Service {
 		return &Service{
-			Index: idx,
-			Registry: map[string]port.SearchProvider{"stub": sp},
+			Index:        idx,
+			Registry:     map[string]port.SearchProvider{"stub": sp},
 			DefaultNames: []string{"stub"},
 			Fetcher:      fetcher,
 			Config: config.Config{
@@ -179,7 +179,7 @@ func TestService_deepSearch_overridesProviderFetch(t *testing.T) {
 	}
 
 	off := false
-	md, err := base(true).SearchMarkdown(context.Background(), "q", nil, &off)
+	md, err := base(true).SearchMarkdown(context.Background(), "q", nil, &off, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +188,7 @@ func TestService_deepSearch_overridesProviderFetch(t *testing.T) {
 	}
 
 	on := true
-	md, err = base(false).SearchMarkdown(context.Background(), "q", nil, &on)
+	md, err = base(false).SearchMarkdown(context.Background(), "q", nil, &on, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +203,7 @@ func TestService_indexError(t *testing.T) {
 		Index:  idx,
 		Config: config.Config{MaxResponseRunes: 100, RequestDeadline: time.Minute},
 	}
-	_, err := svc.SearchMarkdown(context.Background(), "q", nil, nil)
+	_, err := svc.SearchMarkdown(context.Background(), "q", nil, nil, nil)
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -219,22 +219,22 @@ func TestService_providerPath_indexWriteBack_queryKeyedID(t *testing.T) {
 		Registry:     map[string]port.SearchProvider{"stub": sp},
 		DefaultNames: []string{"stub"},
 		Config: config.Config{
-			MinHitCount:                       1,
-			MinTotalTextLen:                   1000,
-			MinSimilarity:                     0,
-			MaxResponseRunes:                  10000,
-			RequestDeadline:                   time.Minute,
-			SearchIndexWriteBackEnabled:       true,
-			SearchIndexWriteBackTimeout:       5 * time.Second,
-			SearchIndexWriteBackMinBodyRunes:  10,
-			SearchIndexWriteBackMaxBodyRunes:  100000,
-			SearchIndexWriteBackTitleMaxRunes: 200,
-			SearchIndexWriteBackIDPrefix:      "ase-q-",
+			MinHitCount:                        1,
+			MinTotalTextLen:                    1000,
+			MinSimilarity:                      0,
+			MaxResponseRunes:                   10000,
+			RequestDeadline:                    time.Minute,
+			SearchIndexWriteBackEnabled:        true,
+			SearchIndexWriteBackTimeout:        5 * time.Second,
+			SearchIndexWriteBackMinBodyRunes:   10,
+			SearchIndexWriteBackMaxBodyRunes:   100000,
+			SearchIndexWriteBackTitleMaxRunes:  200,
+			SearchIndexWriteBackIDPrefix:       "ase-q-",
 			SearchIndexWriteBackMaxConcurrency: 4,
 		},
 	}
 	q := "hello-writeback-query-unique"
-	_, err := svc.SearchMarkdown(context.Background(), q, []string{"stub"}, nil)
+	_, err := svc.SearchMarkdown(context.Background(), q, []string{"stub"}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,6 +257,43 @@ func TestService_providerPath_indexWriteBack_queryKeyedID(t *testing.T) {
 	}
 }
 
+func TestService_providerPath_indexWriteBack_requestOptOut(t *testing.T) {
+	idx := &captureIndex{sliceIndex: sliceIndex{hits: nil}}
+	snippet := strings.Repeat("snippet text ", 8)
+	sp := &spyProvider{result: port.ProviderResult{Items: []port.ProviderItem{{Snippet: snippet}}}}
+	svc := &Service{
+		Index:        idx,
+		Registry:     map[string]port.SearchProvider{"stub": sp},
+		DefaultNames: []string{"stub"},
+		Config: config.Config{
+			MinHitCount:                        1,
+			MinTotalTextLen:                    1000,
+			MinSimilarity:                      0,
+			MaxResponseRunes:                   10000,
+			RequestDeadline:                    time.Minute,
+			SearchIndexWriteBackEnabled:        true,
+			SearchIndexWriteBackTimeout:        5 * time.Second,
+			SearchIndexWriteBackMinBodyRunes:   10,
+			SearchIndexWriteBackMaxBodyRunes:   100000,
+			SearchIndexWriteBackTitleMaxRunes:  200,
+			SearchIndexWriteBackIDPrefix:       "ase-q-",
+			SearchIndexWriteBackMaxConcurrency: 4,
+		},
+	}
+	optOut := false
+	_, err := svc.SearchMarkdown(context.Background(), "opt-out-query", []string{"stub"}, nil, &optOut)
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(200 * time.Millisecond)
+	idx.mu.Lock()
+	n := idx.calls
+	idx.mu.Unlock()
+	if n != 0 {
+		t.Fatalf("expected no IndexDocument when index_write=false, calls=%d", n)
+	}
+}
+
 func TestService_indexEnough_skipsWriteBack(t *testing.T) {
 	idx := &captureIndex{sliceIndex: sliceIndex{hits: []port.Hit{{Body: strings.Repeat("a", 200), Score: 1}}}}
 	svc := &Service{
@@ -272,7 +309,7 @@ func TestService_indexEnough_skipsWriteBack(t *testing.T) {
 			SearchIndexWriteBackEnabled: true,
 		},
 	}
-	_, err := svc.SearchMarkdown(context.Background(), "q", nil, nil)
+	_, err := svc.SearchMarkdown(context.Background(), "q", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -39,12 +39,18 @@ func (s *Service) releaseWriteBackSlot() {
 }
 
 // scheduleProviderIndexWriteBack enqueues a best-effort async OpenSearch upsert (same query → same document id).
-func (s *Service) scheduleProviderIndexWriteBack(query, markdown, rid string) {
-	if !s.Config.SearchIndexWriteBackEnabled {
+func (s *Service) scheduleProviderIndexWriteBack(query, markdown, rid string, allowWB bool) {
+	if !allowWB {
+		if !s.Config.SearchIndexWriteBackEnabled {
+			indexWriteBackTotal.WithLabelValues("skipped_global_off").Inc()
+		} else {
+			indexWriteBackTotal.WithLabelValues("skipped_request_optout").Inc()
+		}
 		return
 	}
 	q := strings.TrimSpace(query)
 	if q == "" {
+		indexWriteBackTotal.WithLabelValues("skipped_empty_query").Inc()
 		return
 	}
 	prefix := strings.TrimSpace(s.Config.SearchIndexWriteBackIDPrefix)
@@ -53,6 +59,7 @@ func (s *Service) scheduleProviderIndexWriteBack(query, markdown, rid string) {
 	}
 	body := domain.WritebackBodyFromMarkdown(markdown, s.Config.SearchIndexWriteBackMaxBodyRunes)
 	if utf8.RuneCountInString(strings.TrimSpace(body)) < s.Config.SearchIndexWriteBackMinBodyRunes {
+		indexWriteBackTotal.WithLabelValues("skipped_body_short").Inc()
 		return
 	}
 	titleMax := s.Config.SearchIndexWriteBackTitleMaxRunes
@@ -72,12 +79,15 @@ func (s *Service) scheduleProviderIndexWriteBack(query, markdown, rid string) {
 		err := idx.IndexDocument(ctx, id, title, body)
 		if err != nil {
 			if errors.Is(err, port.ErrIndexingDisabled) {
+				indexWriteBackTotal.WithLabelValues("noop").Inc()
 				slog.Debug("index write-back skipped", "request_id", rid, "reason", "indexing_disabled")
 				return
 			}
+			indexWriteBackTotal.WithLabelValues("error").Inc()
 			slog.Warn("index write-back failed", "request_id", rid, "id", id, "err", err)
 			return
 		}
+		indexWriteBackTotal.WithLabelValues("ok").Inc()
 		slog.Info("index write-back ok", "request_id", rid, "id", id)
 	}()
 }
