@@ -109,7 +109,7 @@ func main() {
 	signer := admin.NewSessionSigner(cfg)
 	if cfg.AdminUIEnabled() {
 		log.Print("admin UI enabled: GET /admin/")
-		handler.RegisterAdmin(r, cfg, signer)
+		handler.RegisterAdmin(r, cfg, signer, idx)
 	} else {
 		handler.RegisterAdminDisabledRoutes(r)
 	}

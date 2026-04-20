@@ -99,7 +99,7 @@ go run ./cmd/server
 ### Docker 与本地 OpenSearch
 
 - **Compose**：请使用 **Docker Compose V2**（命令为 **`docker compose`**，空格）。勿使用旧版 Python **`docker-compose` 1.x**；在新版 Docker Engine 上可能报错 **`KeyError: 'ContainerConfig'`**，见 [docs/DEPLOY_LINUX_VM.md](./docs/DEPLOY_LINUX_VM.md) 中「§9. 故障：KeyError: 'ContainerConfig'」。
-- **Admin**：配置 `ADMIN_USERNAME`、`ADMIN_PASSWORD_BCRYPT`（或开发用 `ADMIN_PASSWORD`）、`ADMIN_SESSION_SECRET` 后，浏览器访问 **`/admin/`**（脱敏配置与 OpenSearch 索引只读）。见 [docs/ADMIN_UI_DESIGN.md](./docs/ADMIN_UI_DESIGN.md)。
+- **Admin**：配置 `ADMIN_USERNAME`、`ADMIN_PASSWORD_BCRYPT`（或开发用 `ADMIN_PASSWORD`）、`ADMIN_SESSION_SECRET` 后，浏览器访问 **`/admin/`**（脱敏配置与 OpenSearch 索引列表只读）；登录后可打开 **`/admin/opensearch/`** 分页查看索引 `_source`、并用与 `POST /v1/search` 相同的逻辑试搜。见 [docs/ADMIN_UI_DESIGN.md](./docs/ADMIN_UI_DESIGN.md)。
 - **镜像构建**：默认 **`Dockerfile`** 基于 **Debian slim + Chromium**，供 baidu/bing/google 等无头浏览器 Provider；更小、无浏览器的运行时见 **`Dockerfile.distroless`**（适合仅 stub/Tavily）。
 - **一次编排（API + OpenSearch）**：在仓库根目录执行 **`docker compose up --build -d`**。会启动 **`opensearch`**（9200）与 **`ase`**（默认把宿主机 **18080** 映射到容器内 18080）；`ase` 已默认 **`shm_size: 2gb`**、**`CHROME_EXEC_PATH=/usr/bin/chromium`**，并默认启用 **baidu/bing/google** 三个浏览器 Provider；**`TAVILY_API_KEY`** 在 `.env` 中设置后即注册 **tavily**。未在请求 JSON 里写 **`providers`** 时，默认仅走 **`SEARCH_DEFAULT_PROVIDERS`（默认 `baidu`）**；**`DEV_API_KEY=dev-only`** 可在 `.env` 覆盖。
 - **仅索引节点（旧用法）**：**`docker compose up -d opensearch`**，宿主机上 **`OPENSEARCH_URLS=http://localhost:9200`** 连接。索引映射与查询约定见 [docs/DETAILED_DESIGN.md](./docs/DETAILED_DESIGN.md) §6.3。

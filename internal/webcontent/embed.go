@@ -11,3 +11,8 @@ var IndexHTML []byte
 //
 //go:embed admin.html
 var AdminHTML []byte
+
+// AdminOpenSearchHTML is the admin OpenSearch browse + try-search page.
+//
+//go:embed admin_opensearch.html
+var AdminOpenSearchHTML []byte

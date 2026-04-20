@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OpenSearch 浏览 — ASE Admin</title>
+  <style>
+    :root { --bg:#0f1419; --card:#1a2332; --text:#e6edf3; --muted:#8b9cb3; --accent:#3b82f6; --err:#f87171; --ok:#4ade80; }
+    * { box-sizing: border-box; }
+    body { font-family: ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 1.5rem; line-height: 1.5; }
+    h1 { font-size: 1.25rem; margin: 0 0 0.5rem; }
+    .card { background: var(--card); border-radius: 8px; padding: 1rem 1.25rem; max-width: 72rem; margin-bottom: 1rem; }
+    a { color: var(--accent); }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.25rem; }
+    input[type="text"], input[type="number"] { width: 100%; max-width: 32rem; padding: 0.5rem 0.65rem; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: var(--text); }
+    button { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; margin-right: 0.5rem; margin-top: 0.5rem; }
+    button.secondary { background: #334155; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    pre { background: #0f172a; padding: 1rem; border-radius: 6px; overflow: auto; font-size: 0.78rem; max-height: 28rem; border: 1px solid #334155; white-space: pre-wrap; word-break: break-word; }
+    .err { color: var(--err); font-size: 0.9rem; margin-top: 0.5rem; }
+    .ok { color: var(--ok); font-size: 0.9rem; }
+    .hidden { display: none !important; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { border: 1px solid #334155; padding: 0.45rem 0.5rem; text-align: left; vertical-align: top; }
+    th { background: #0f172a; color: var(--muted); font-weight: 600; }
+    .mono { font-family: ui-monospace, monospace; font-size: 0.8rem; }
+    .pager { margin-top: 0.75rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <p style="margin:0 0 1rem;"><a href="/admin/">← 返回管理首页</a></p>
+  <h1>OpenSearch 索引</h1>
+  <p style="color:var(--muted);font-size:0.9rem;margin:0 0 1rem;">查看当前配置索引中的文档（分页），并用与 <code>POST /v1/search</code> 相同的检索逻辑试搜。</p>
+
+  <div id="gate" class="card hidden">
+    <p class="err">需要管理员登录后才能使用本页。</p>
+    <p><a href="/admin/">前往登录</a></p>
+  </div>
+
+  <div id="main" class="hidden">
+    <div class="card">
+      <p id="metaLine" class="mono">加载中…</p>
+      <p id="metaWarn" class="err hidden"></p>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size:1rem;margin:0 0 0.5rem;">浏览文档（match_all）</h2>
+      <p style="color:var(--muted);font-size:0.85rem;margin:0 0 0.5rem;">直接读取索引中的 <code>_source</code>（通常为 <code>title</code>、<code>body_text</code>）。</p>
+      <div class="pager">
+        <label>每页条数 <input type="number" id="pageSize" min="1" max="100" value="20" style="width:5rem;display:inline-block;" /></label>
+        <button type="button" id="btnBrowse">加载本页</button>
+      </div>
+      <div class="pager">
+        <button type="button" id="btnPrev" class="secondary">上一页</button>
+        <button type="button" id="btnNext" class="secondary">下一页</button>
+        <span id="pageInfo" class="mono" style="color:var(--muted);">from=0</span>
+      </div>
+      <div id="browseErr" class="err hidden"></div>
+      <div id="browseTableWrap" class="hidden" style="margin-top:0.75rem;overflow:auto;">
+        <table id="browseTable">
+          <thead><tr><th>_id</th><th>_score</th><th>title</th><th>body_text（节选）</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <details style="margin-top:1rem;"><summary style="cursor:pointer;color:var(--muted);">原始 JSON 响应</summary><pre id="browseRaw"></pre></details>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size:1rem;margin:0 0 0.5rem;">试搜（与线上检索一致）</h2>
+      <p style="color:var(--muted);font-size:0.85rem;margin:0 0 0.5rem;">调用服务内的 <code>IndexRepository.Search</code>（<code>multi_match</code> <code>title^2</code> + <code>body_text</code>）。</p>
+      <label for="q">关键词</label>
+      <input type="text" id="q" placeholder="输入要试的查询" />
+      <button type="button" id="btnSearch">搜索</button>
+      <div id="searchErr" class="err hidden"></div>
+      <pre id="searchOut" class="hidden" style="margin-top:0.75rem;"></pre>
+    </div>
+  </div>
+
+  <script>
+    var browseFrom = 0;
+
+    function esc(s) {
+      if (s == null) return "";
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
+
+    function snippet(s, max) {
+      s = s == null ? "" : String(s);
+      if (s.length <= max) return s;
+      return s.slice(0, max) + "…";
+    }
+
+    async function api(path, opt) {
+      var r = await fetch(path, Object.assign({ credentials: "same-origin" }, opt || {}));
+      var ct = r.headers.get("content-type") || "";
+      var body = ct.indexOf("json") >= 0 ? await r.json().catch(function() { return null; }) : await r.text();
+      if (r.status === 401) throw new Error("unauthorized");
+      if (!r.ok) throw new Error((body && body.detail) || (typeof body === "string" ? body : JSON.stringify(body)) || r.status);
+      return body;
+    }
+
+    function renderBrowseTable(data) {
+      var hits = (data.hits && data.hits.hits) || [];
+      var tb = document.querySelector("#browseTable tbody");
+      tb.innerHTML = "";
+      for (var i = 0; i < hits.length; i++) {
+        var h = hits[i];
+        var src = h._source || {};
+        var tr = document.createElement("tr");
+        tr.innerHTML = "<td class=\"mono\">" + esc(h._id) + "</td><td class=\"mono\">" + esc(h._score) + "</td><td>" + esc(src.title) + "</td><td>" + esc(snippet(src.body_text, 400)) + "</td>";
+        tb.appendChild(tr);
+      }
+      document.getElementById("browseTableWrap").classList.toggle("hidden", hits.length === 0);
+    }
+
+    async function loadBrowse() {
+      var errEl = document.getElementById("browseErr");
+      errEl.classList.add("hidden");
+      var size = parseInt(document.getElementById("pageSize").value, 10) || 20;
+      if (size < 1) size = 1;
+      if (size > 100) size = 100;
+      document.getElementById("pageSize").value = size;
+      try {
+        var u = "/admin/api/opensearch/documents?from=" + browseFrom + "&size=" + size;
+        var raw = await fetch(u, { credentials: "same-origin" });
+        var text = await raw.text();
+        document.getElementById("browseRaw").textContent = text;
+        if (!raw.ok) {
+          errEl.textContent = "错误 " + raw.status + ": " + text;
+          errEl.classList.remove("hidden");
+          return;
+        }
+        var data = JSON.parse(text);
+        renderBrowseTable(data);
+        var total = (data.hits && data.hits.total && (data.hits.total.value != null ? data.hits.total.value : data.hits.total)) || "?";
+        document.getElementById("pageInfo").textContent = "from=" + browseFrom + " size=" + size + " | 本页条数=" + ((data.hits && data.hits.hits) || []).length + " | total≈" + total;
+      } catch (e) {
+        errEl.textContent = String(e.message || e);
+        errEl.classList.remove("hidden");
+      }
+    }
+
+    async function doSearch() {
+      var errEl = document.getElementById("searchErr");
+      var out = document.getElementById("searchOut");
+      errEl.classList.add("hidden");
+      out.classList.add("hidden");
+      var q = document.getElementById("q").value.trim();
+      if (!q) {
+        errEl.textContent = "请输入关键词";
+        errEl.classList.remove("hidden");
+        return;
+      }
+      try {
+        var data = await api("/admin/api/opensearch/hits?q=" + encodeURIComponent(q));
+        out.textContent = JSON.stringify(data, null, 2);
+        out.classList.remove("hidden");
+      } catch (e) {
+        errEl.textContent = String(e.message || e);
+        errEl.classList.remove("hidden");
+      }
+    }
+
+    document.getElementById("btnBrowse").onclick = function() { loadBrowse(); };
+    document.getElementById("btnPrev").onclick = function() {
+      var size = parseInt(document.getElementById("pageSize").value, 10) || 20;
+      browseFrom = Math.max(0, browseFrom - size);
+      loadBrowse();
+    };
+    document.getElementById("btnNext").onclick = function() {
+      var size = parseInt(document.getElementById("pageSize").value, 10) || 20;
+      browseFrom = browseFrom + size;
+      loadBrowse();
+    };
+    document.getElementById("btnSearch").onclick = function() { doSearch(); };
+
+    (async function init() {
+      try {
+        var s = await api("/admin/api/session");
+        if (!s || !s.ok) {
+          document.getElementById("gate").classList.remove("hidden");
+          return;
+        }
+        document.getElementById("main").classList.remove("hidden");
+        var meta = await api("/admin/api/opensearch/meta");
+        var line = "索引名: <strong>" + esc(meta.index || "(空)") + "</strong> — OpenSearch 已配置: " + (meta.open_search_configured ? "是" : "否");
+        document.getElementById("metaLine").innerHTML = line;
+        if (!meta.open_search_configured) {
+          var w = document.getElementById("metaWarn");
+          w.textContent = "当前未配置 OPENSEARCH_URLS / OPENSEARCH_INDEX，浏览与试搜接口会返回不可用。";
+          w.classList.remove("hidden");
+        }
+        if (meta.open_search_configured) await loadBrowse();
+      } catch (e) {
+        document.getElementById("gate").classList.remove("hidden");
+        document.getElementById("main").classList.add("hidden");
+      }
+    })();
+  </script>
+</body>
+</html>

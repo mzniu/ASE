@@ -6,12 +6,14 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/example/ase/internal/admin"
 	"github.com/example/ase/internal/config"
 	"github.com/example/ase/internal/httpx"
+	"github.com/example/ase/internal/port"
 	"github.com/example/ase/internal/webcontent"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -25,7 +27,7 @@ type adminLoginBody struct {
 }
 
 // RegisterAdmin mounts /admin UI and APIs when cfg.AdminUIEnabled(); no-op otherwise.
-func RegisterAdmin(r chi.Router, cfg config.Config, signer *admin.SessionSigner) {
+func RegisterAdmin(r chi.Router, cfg config.Config, signer *admin.SessionSigner, idx port.IndexRepository) {
 	if !cfg.AdminUIEnabled() || signer == nil {
 		return
 	}
@@ -38,6 +40,14 @@ func RegisterAdmin(r chi.Router, cfg config.Config, signer *admin.SessionSigner)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(webcontent.AdminHTML)
 	})
+	r.Get("/admin/opensearch", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/admin/opensearch/", http.StatusFound)
+	})
+	r.Get("/admin/opensearch/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(webcontent.AdminOpenSearchHTML)
+	})
 
 	r.Post("/admin/api/login", adminLogin(cfg, signer))
 	r.Post("/admin/api/logout", adminLogout)
@@ -47,6 +57,9 @@ func RegisterAdmin(r chi.Router, cfg config.Config, signer *admin.SessionSigner)
 		r.Use(adminAuthMiddleware(signer))
 		r.Get("/admin/api/config", adminConfigView(cfg))
 		r.Get("/admin/api/indices", adminIndices(cfg))
+		r.Get("/admin/api/opensearch/meta", adminOpenSearchMeta(cfg))
+		r.Get("/admin/api/opensearch/documents", adminOpenSearchDocuments(cfg))
+		r.Get("/admin/api/opensearch/hits", adminOpenSearchHits(cfg, idx))
 	})
 }
 
@@ -163,6 +176,120 @@ func adminIndices(cfg config.Config) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(b)
 	}
+}
+
+func adminOpenSearchMeta(cfg config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ok := len(cfg.OpenSearchURLs) > 0 && strings.TrimSpace(cfg.OpenSearchIndex) != ""
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"open_search_configured": ok,
+			"index":                  cfg.OpenSearchIndex,
+		})
+	}
+}
+
+func adminOpenSearchDocuments(cfg config.Config) http.HandlerFunc {
+	type browseBody struct {
+		Query map[string]any `json:"query"`
+		From  int            `json:"from"`
+		Size  int            `json:"size"`
+		Sort  []string       `json:"sort"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		from := clampInt(queryIntDefault(r, "from", 0), 0, 50000)
+		size := clampInt(queryIntDefault(r, "size", 20), 1, 100)
+		ctx, cancel := context.WithTimeout(r.Context(), 25*time.Second)
+		defer cancel()
+		raw, err := json.Marshal(browseBody{
+			Query: map[string]any{"match_all": map[string]any{}},
+			From:  from,
+			Size:  size,
+			Sort:  []string{"_doc"},
+		})
+		if err != nil {
+			httpx.WriteProblem(w, http.StatusInternalServerError, "encode error", err.Error())
+			return
+		}
+		b, status, err := admin.IndexSearchRaw(ctx, cfg, raw)
+		if err != nil {
+			if status == http.StatusServiceUnavailable {
+				httpx.WriteProblem(w, http.StatusServiceUnavailable, "not available", err.Error())
+				return
+			}
+			slog.Error("admin opensearch documents", "err", err)
+			httpx.WriteProblem(w, http.StatusBadGateway, "opensearch error", err.Error())
+			return
+		}
+		if status != http.StatusOK {
+			httpx.WriteProblem(w, http.StatusBadGateway, "opensearch error", string(b))
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(b)
+	}
+}
+
+func adminOpenSearchHits(cfg config.Config, idx port.IndexRepository) http.HandlerFunc {
+	type hitRow struct {
+		ID    string  `json:"id"`
+		Score float64 `json:"score"`
+		Body  string  `json:"body"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		q := strings.TrimSpace(r.URL.Query().Get("q"))
+		if q == "" {
+			httpx.WriteProblem(w, http.StatusBadRequest, "bad request", "query parameter q is required")
+			return
+		}
+		if len(cfg.OpenSearchURLs) == 0 || strings.TrimSpace(cfg.OpenSearchIndex) == "" {
+			httpx.WriteProblem(w, http.StatusServiceUnavailable, "not available", "OpenSearch not configured")
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 25*time.Second)
+		defer cancel()
+		hits, err := idx.Search(ctx, q)
+		if err != nil {
+			slog.Error("admin opensearch hits", "err", err)
+			httpx.WriteProblem(w, http.StatusBadGateway, "search error", err.Error())
+			return
+		}
+		out := make([]hitRow, 0, len(hits))
+		for _, h := range hits {
+			out = append(out, hitRow{ID: h.ID, Score: h.Score, Body: h.Body})
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"query": q,
+			"hits":  out,
+			"count": len(out),
+		})
+	}
+}
+
+func queryIntDefault(r *http.Request, key string, def int) int {
+	s := strings.TrimSpace(r.URL.Query().Get(key))
+	if s == "" {
+		return def
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return def
+	}
+	return n
+}
+
+func clampInt(v, lo, hi int) int {
+	if v < lo {
+		return lo
+	}
+	if v > hi {
+		return hi
+	}
+	return v
 }
 
 // RegisterAdminDisabledRoutes registers /admin with 503 + instructions when Admin UI env is not set.

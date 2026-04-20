@@ -30,6 +30,7 @@ func ServiceInfo(cfg config.Config) http.HandlerFunc {
 		}
 		if cfg.AdminUIEnabled() {
 			links["admin"] = "/admin/"
+			links["admin_opensearch"] = "/admin/opensearch/"
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
