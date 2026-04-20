@@ -2,7 +2,7 @@ module github.com/example/ase
 
 go 1.26
 
-require github.com/go-chi/chi/v5 v5.2.2
+require github.com/go-chi/chi/v5 v5.2.5
 
 require golang.org/x/time v0.15.0
 
