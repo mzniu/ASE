@@ -110,6 +110,8 @@ func main() {
 	if cfg.AdminUIEnabled() {
 		log.Print("admin UI enabled: GET /admin/")
 		handler.RegisterAdmin(r, cfg, signer)
+	} else {
+		handler.RegisterAdminDisabledRoutes(r)
 	}
 
 	r.Group(func(r chi.Router) {

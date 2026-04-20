@@ -164,3 +164,29 @@ func adminIndices(cfg config.Config) http.HandlerFunc {
 		_, _ = w.Write(b)
 	}
 }
+
+// RegisterAdminDisabledRoutes registers /admin with 503 + instructions when Admin UI env is not set.
+func RegisterAdminDisabledRoutes(r chi.Router) {
+	r.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/admin/", http.StatusFound)
+	})
+	r.Get("/admin/", adminDisabledPage)
+}
+
+func adminDisabledPage(w http.ResponseWriter, _ *http.Request) {
+	const page = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"/><title>Admin 未启用</title></head><body style="font-family:system-ui,sans-serif;max-width:40rem;margin:2rem;line-height:1.5">
+<h1>Admin 管理页未配置</h1>
+<p>当前未设置启用 Admin 所需的环境变量，因此无法使用登录与配置页。</p>
+<p>请在部署环境（如仓库根目录 <code>.env</code>）中配置并重启 ASE 容器：</p>
+<ul>
+<li><code>ADMIN_USERNAME</code></li>
+<li><code>ADMIN_PASSWORD_BCRYPT</code>（推荐）或开发用 <code>ADMIN_PASSWORD</code></li>
+<li><code>ADMIN_SESSION_SECRET</code>（至少 16 个字符）</li>
+</ul>
+<p>Docker Compose 部署时须将上述变量传入 <code>ase</code> 服务（本仓库 <code>docker-compose.yml</code> 已支持从 <code>.env</code> 注入）。</p>
+<p>详见仓库 <code>docs/ADMIN_ENABLE.md</code>。</p>
+</body></html>`
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusServiceUnavailable)
+	_, _ = w.Write([]byte(page))
+}

@@ -26,6 +26,7 @@
 | [GITHUB_WORKFLOW.md](./GITHUB_WORKFLOW.md) | 分支保护、Actions、Secrets、Dependabot |
 | [DEPLOY_LINUX_VM.md](./DEPLOY_LINUX_VM.md) | **Linux 虚机**：Docker Compose 部署、防火墙与安全组 |
 | [ADMIN_UI_DESIGN.md](./ADMIN_UI_DESIGN.md) | **Admin 管理界面**（外网同端口）：方案、安全、路由与分期 |
+| [ADMIN_ENABLE.md](./ADMIN_ENABLE.md) | **Admin 启用条件**：环境变量、Compose 注入与自检 |
 | [SDLC.md](./SDLC.md) | 生命周期、发布与回滚、合并门禁 |
 | [DOCUMENTATION_STANDARDS.md](./DOCUMENTATION_STANDARDS.md) | 文档维护规则与版本表 |
 
