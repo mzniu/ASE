@@ -53,6 +53,11 @@ func (s *Service) SearchMarkdown(ctx context.Context, query string, providers []
 		slog.Error("index search failed", "request_id", rid, "query_runes", qRunes, "err", err)
 		return "", fmt.Errorf("index search: %w", err)
 	}
+	wbPrefix := strings.TrimSpace(s.Config.SearchIndexWriteBackIDPrefix)
+	if wbPrefix == "" {
+		wbPrefix = domain.DefaultWritebackHitIDPrefix
+	}
+	hits = domain.WithoutWritebackIndexHits(hits, wbPrefix)
 	domain.ApplySimilarity(hits)
 	if domain.Enough(hits, s.Config.MinHitCount, s.Config.MinTotalTextLen, s.Config.MinSimilarity) {
 		md := domain.AgentMarkdownFromIndexHits(query, hits)

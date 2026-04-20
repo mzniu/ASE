@@ -37,6 +37,8 @@
 
 **Phase-1/2 索引回写**：当索引「不够」而走 **provider 回落**并成功返回 Markdown 时，服务会 **异步** 将正文写入 OpenSearch（`title` 为查询截断、`body_text` 为轻量去 Markdown 后的文本）；文档 **`_id` = `SEARCH_INDEX_WRITE_BACK_ID_PREFIX` + SHA256(trim(`query`))**，同一查询重复覆盖。**默认开启**（`SEARCH_INDEX_WRITE_BACK_ENABLED`，见 `.env.example` / `docker-compose.yml`）；关闭可设 `false`。`POST /v1/search` 请求体可选 **`index_write`: `false`** 在全局开启时 **跳过本次**写回（不能绕过全局关闭）。仅回落路径写回；索引已足够时不会写。Prometheus 指标 **`ase_index_writeback_total{result=...}`**（如 `ok`、`error`、`noop`、`skipped_request_optout` 等）。
 
+**索引优先与回写隔离**：判定「索引是否足够」及从索引生成 Markdown 时，会 **忽略** `_id` 以 `SEARCH_INDEX_WRITE_BACK_ID_PREFIX`（默认 `ase-q-`）开头的回写文档，避免单条缓存命中 + `MIN_SIMILARITY=0` 时 **任意查询都被当成已足够** 而不再走 provider。
+
 ### 端点一览（v1）
 
 | 方法 | 路径 | 说明 |

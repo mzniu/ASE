@@ -92,6 +92,38 @@ func TestService_indexEnough_skipsProvider(t *testing.T) {
 	}
 }
 
+func TestService_onlyWritebackIndexHit_fallsBackToProvider(t *testing.T) {
+	idx := sliceIndex{hits: []port.Hit{
+		{ID: "ase-q-deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef", Body: strings.Repeat("cached ", 50), Score: 10},
+	}}
+	sp := &spyProvider{result: port.ProviderResult{Items: []port.ProviderItem{{Snippet: "from live provider"}}}}
+	svc := &Service{
+		Index: idx,
+		Registry: map[string]port.SearchProvider{
+			"stub": sp,
+		},
+		DefaultNames: []string{"stub"},
+		Config: config.Config{
+			MinHitCount:                  1,
+			MinTotalTextLen:              10,
+			MinSimilarity:                0,
+			MaxResponseRunes:             10000,
+			RequestDeadline:              time.Minute,
+			SearchIndexWriteBackIDPrefix: "ase-q-",
+		},
+	}
+	md, err := svc.SearchMarkdown(context.Background(), "unrelated query", nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sp.calls != 1 {
+		t.Fatalf("provider calls = %d want 1", sp.calls)
+	}
+	if !strings.Contains(md, "from live provider") {
+		t.Fatalf("expected provider markdown, got %q", md)
+	}
+}
+
 func TestService_fallback_callsProvider(t *testing.T) {
 	idx := sliceIndex{hits: nil}
 	sp := &spyProvider{result: port.ProviderResult{Items: []port.ProviderItem{{Snippet: "from api"}}}}
