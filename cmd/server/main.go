@@ -19,6 +19,7 @@ import (
 
 	"github.com/example/ase/internal/adapter/baidubrowser"
 	"github.com/example/ase/internal/adapter/bingbrowser"
+	"github.com/example/ase/internal/adapter/duckduckgo"
 	"github.com/example/ase/internal/adapter/fetch"
 	"github.com/example/ase/internal/adapter/googlebrowser"
 	"github.com/example/ase/internal/adapter/opensearch"
@@ -65,7 +66,7 @@ func main() {
 	registry["stub"] = stubprovider.Fixed{
 		Result: port.ProviderResult{
 			Items: []port.ProviderItem{
-				{Title: "stub", Snippet: "将 providers 设为 [\"stub\"] 用于测试；生产请使用 baidu、bing、google 或 tavily。"},
+				{Title: "stub", Snippet: "将 providers 设为 [\"stub\"] 用于测试；生产请使用 baidu、bing、google、duckduckgo 或 tavily。"},
 			},
 		},
 	}
@@ -163,6 +164,9 @@ func buildProviderRegistry(cfg config.Config) map[string]port.SearchProvider {
 	}
 	if tc := tavily.NewFromConfig(cfg); tc != nil {
 		r["tavily"] = tc
+	}
+	if d := duckduckgo.NewFromConfig(cfg); d != nil {
+		r["duckduckgo"] = d
 	}
 	return r
 }

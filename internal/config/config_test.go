@@ -18,6 +18,7 @@ func TestLoad_defaults(t *testing.T) {
 		"BAIDU_BROWSER_ENABLED", "BAIDU_BROWSER_MAX_RESULTS", "CHROME_EXEC_PATH", "BAIDU_BROWSER_USER_AGENT",
 		"BING_BROWSER_ENABLED", "BING_BROWSER_MAX_RESULTS", "BING_BROWSER_USER_AGENT", "BING_BROWSER_MARKET",
 		"GOOGLE_BROWSER_ENABLED", "GOOGLE_BROWSER_MAX_RESULTS", "GOOGLE_BROWSER_USER_AGENT", "GOOGLE_BROWSER_HL", "GOOGLE_BROWSER_GL",
+		"DUCKDUCKGO_ENABLED", "DUCKDUCKGO_MAX_RESULTS", "DUCKDUCKGO_TIMEOUT_MS", "DUCKDUCKGO_HTML_URL", "DUCKDUCKGO_USER_AGENT",
 		"SEARCH_DEFAULT_PROVIDERS",
 		"SEARCH_INDEX_WRITE_BACK_ENABLED", "SEARCH_INDEX_WRITE_BACK_TIMEOUT_MS", "SEARCH_INDEX_WRITE_BACK_MAX_CONCURRENCY",
 		"SEARCH_INDEX_WRITE_BACK_MIN_BODY_RUNES", "SEARCH_INDEX_WRITE_BACK_MAX_BODY_RUNES", "SEARCH_INDEX_WRITE_BACK_TITLE_MAX_RUNES",
@@ -42,6 +43,9 @@ func TestLoad_defaults(t *testing.T) {
 	if !c.SearchIndexWriteBackEnabled {
 		t.Fatal("SearchIndexWriteBackEnabled should default to true")
 	}
+	if !c.DuckDuckGoEnabled {
+		t.Fatal("DuckDuckGoEnabled should default to true")
+	}
 	if c.SearchIndexWriteBackTimeout != 5*time.Second {
 		t.Fatalf("SearchIndexWriteBackTimeout = %v", c.SearchIndexWriteBackTimeout)
 	}
@@ -52,6 +56,14 @@ func TestLoad_searchIndexWriteBack_disabled(t *testing.T) {
 	c := Load()
 	if c.SearchIndexWriteBackEnabled {
 		t.Fatal("expected write-back disabled")
+	}
+}
+
+func TestLoad_duckduckgo_disabled(t *testing.T) {
+	t.Setenv("DUCKDUCKGO_ENABLED", "false")
+	c := Load()
+	if c.DuckDuckGoEnabled {
+		t.Fatal("expected duckduckgo disabled")
 	}
 }
 

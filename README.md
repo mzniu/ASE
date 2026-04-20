@@ -31,6 +31,10 @@
 
 - **Go**（版本以根目录 `go.mod` 为准；CI 使用 `go-version-file` 对齐）+ **OpenSearch 2.x**（境内集群）；HTTP 路由 **chi v5**。详见 [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) §2.4、[docs/DETAILED_DESIGN.md](./docs/DETAILED_DESIGN.md) §2.1、[docs/ROUTER_FRAMEWORK_EVALUATION.md](./docs/ROUTER_FRAMEWORK_EVALUATION.md)。
 
+### 第三方检索（SearchProvider）
+
+回落路径可选引擎（`POST /v1/search` 的 `providers`）：**`baidu` / `bing` / `google`**（无头 Chrome，见各 `*_BROWSER_*` 环境变量）、**`duckduckgo`**（DuckDuckGo HTML 搜索，无 API Key，默认注册；**`DUCKDUCKGO_ENABLED=false`** 可关闭）、**`tavily`**（需 **`TAVILY_API_KEY`**）、测试用 **`stub`**。
+
 ### OpenSearch（索引优先，REQ-F-006）
 
 同时配置 **`OPENSEARCH_URLS`**（逗号分隔，如 `https://search.example:9200`）与 **`OPENSEARCH_INDEX`** 后，服务使用 [opensearch-go](https://github.com/opensearch-project/opensearch-go) 对索引字段 **`title`**、**`body_text`** 做 `multi_match` 检索；可选 **`OPENSEARCH_USER`** / **`OPENSEARCH_PASSWORD`**（HTTP Basic）、**`OPENSEARCH_SEARCH_SIZE`**（默认 10）。未配置两项时回退为内存空索引（与此前行为一致）。映射与查询约定见 [docs/DETAILED_DESIGN.md](./docs/DETAILED_DESIGN.md) §6.3。

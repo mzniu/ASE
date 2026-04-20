@@ -66,6 +66,13 @@ type Config struct {
 	GoogleBrowserHL         string // hl= (e.g. zh-CN)
 	GoogleBrowserGL         string // gl= (e.g. cn)
 
+	// DuckDuckGo HTML search (https://html.duckduckgo.com/html); no API key.
+	DuckDuckGoEnabled    bool
+	DuckDuckGoMaxResults int
+	DuckDuckGoTimeoutMs  int
+	DuckDuckGoBaseURL    string
+	DuckDuckGoUserAgent  string
+
 	// SearchDefaultProviders is the default list when the JSON body omits "providers" (comma env SEARCH_DEFAULT_PROVIDERS).
 	SearchDefaultProviders []string
 
@@ -127,6 +134,11 @@ func Load() Config {
 		GoogleBrowserUserAgent:  os.Getenv("GOOGLE_BROWSER_USER_AGENT"),
 		GoogleBrowserHL:         getenv("GOOGLE_BROWSER_HL", ""),
 		GoogleBrowserGL:         getenv("GOOGLE_BROWSER_GL", ""),
+		DuckDuckGoEnabled:       getenvBool("DUCKDUCKGO_ENABLED", true),
+		DuckDuckGoMaxResults:    getenvInt("DUCKDUCKGO_MAX_RESULTS", 10),
+		DuckDuckGoTimeoutMs:     getenvInt("DUCKDUCKGO_TIMEOUT_MS", 15000),
+		DuckDuckGoBaseURL:       getenv("DUCKDUCKGO_HTML_URL", ""),
+		DuckDuckGoUserAgent:     os.Getenv("DUCKDUCKGO_USER_AGENT"),
 		AdminUsername:           strings.TrimSpace(os.Getenv("ADMIN_USERNAME")),
 		AdminPasswordBcrypt:     strings.TrimSpace(os.Getenv("ADMIN_PASSWORD_BCRYPT")),
 		AdminPasswordPlain:      os.Getenv("ADMIN_PASSWORD"),

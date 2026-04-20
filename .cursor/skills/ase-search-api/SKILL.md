@@ -55,7 +55,7 @@ Body:
 ```
 
 - **`query`**: required, non-empty string.
-- **`providers`**: optional string array (`baidu`, `bing`, `google`, `tavily`, `stub`, …). Omit to use server defaults.
+- **`providers`**: optional string array (`baidu`, `bing`, `google`, `duckduckgo`, `tavily`, `stub`, …). Omit to use server defaults.
 - **`deepsearch`**: optional boolean. When set, overrides the server’s **`PROVIDER_FETCH_RESULT_URLS`** for this request only (`true` = fetch result-page excerpts; `false` = skip). Omit to use server default.
 - **`index_write`**: optional boolean. When **`false`**, skips the server’s async OpenSearch write-back for this call only (if the server has write-back enabled). Omit or **`true`** to allow write-back when the server enables it. Cannot force write-back when the server has it disabled globally.
 

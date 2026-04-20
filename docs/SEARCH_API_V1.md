@@ -77,7 +77,7 @@
 ```json
 {
   "query": "string",
-  "providers": ["baidu", "bing", "google"],
+  "providers": ["baidu", "bing", "google", "duckduckgo"],
   "deepsearch": true,
   "index_write": true
 }
@@ -86,7 +86,7 @@
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `query` | string | 是 | 自然语言查询；长度上限实现期定义（建议文档化默认如 4k 字符，超限 **400**） |
-| `providers` | string[] | 否 | 选用哪些搜索引擎；合法值为服务端已注册的名称（小写）：`baidu`、`bing`、`google`、`tavily`、`stub` 等。**省略**或空数组时使用环境变量 **`SEARCH_DEFAULT_PROVIDERS`**（Docker 编排默认 **`baidu`**）；若环境变量也未配置，则默认仅 **`baidu`**（未启用则 **`stub`**）。可填多个，结果按 URL 去重合并，并标注 **来源**。未知名称返回 **400**。 |
+| `providers` | string[] | 否 | 选用哪些搜索引擎；合法值为服务端已注册的名称（小写）：`baidu`、`bing`、`google`、`duckduckgo`、`tavily`、`stub` 等（`duckduckgo` 为 HTML 端点抓取，无 API Key，可用 **`DUCKDUCKGO_ENABLED=false`** 关闭）。**省略**或空数组时使用环境变量 **`SEARCH_DEFAULT_PROVIDERS`**（Docker 编排默认 **`baidu`**）；若环境变量也未配置，则默认仅 **`baidu`**（未启用则 **`stub`**）。可填多个，结果按 URL 去重合并，并标注 **来源**。未知名称返回 **400**。 |
 | `deepsearch` | boolean | 否 | 是否对 Provider 返回结果中的落地 URL 再抓取正文（REQ-F-012，与 **`PROVIDER_FETCH_RESULT_URLS`** 等价能力）。**省略**时沿用服务端环境变量；若传入则**仅本次请求**覆盖（`true` 强制抓取，`false` 强制不抓取）。仅在已走 Provider 回落路径且服务已配置 **`PageFetcher`** 时生效。 |
 | `index_write` | boolean | 否 | 是否在 **回落路径成功** 后仍执行 **异步 OpenSearch 写回**（与 **`SEARCH_INDEX_WRITE_BACK_ENABLED`** 组合使用）。**省略**或为 **`true`**：全局开启写回时则写回；为 **`false`** 时**本次请求**不写回。全局关闭写回时，本字段无法强制开启。文档 `_id` 仅由 `query` 派生，见 README「索引回写」。 |
 
