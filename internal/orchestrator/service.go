@@ -28,6 +28,9 @@ type Service struct {
 	DefaultNames []string                       // used when the HTTP body omits providers
 	Fetcher      port.PageFetcher               // optional; used when fetch is enabled (config and/or deepsearch)
 	Config       config.Config
+
+	writeBackSemOnce sync.Once
+	writeBackSem     chan struct{} // async index write-back (SEARCH_INDEX_WRITE_BACK_*)
 }
 
 // SearchMarkdown returns final Markdown for POST /v1/search.
@@ -119,6 +122,7 @@ func (s *Service) SearchMarkdown(ctx context.Context, query string, providers []
 		"out_runes", utf8.RuneCountInString(md),
 		"duration_ms", time.Since(start).Milliseconds(),
 	)
+	s.scheduleProviderIndexWriteBack(query, md, rid)
 	return md, nil
 }
 

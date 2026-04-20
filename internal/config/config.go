@@ -69,6 +69,15 @@ type Config struct {
 	// SearchDefaultProviders is the default list when the JSON body omits "providers" (comma env SEARCH_DEFAULT_PROVIDERS).
 	SearchDefaultProviders []string
 
+	// SearchIndexWriteBack: after a successful provider-path /v1/search, asynchronously index title+body for dedupe by query-only document id.
+	SearchIndexWriteBackEnabled        bool
+	SearchIndexWriteBackTimeout        time.Duration
+	SearchIndexWriteBackMaxConcurrency int
+	SearchIndexWriteBackMinBodyRunes   int
+	SearchIndexWriteBackMaxBodyRunes   int
+	SearchIndexWriteBackTitleMaxRunes  int
+	SearchIndexWriteBackIDPrefix       string
+
 	// Admin UI (GET /admin/): username + password (bcrypt hash or dev plain) + session secret.
 	AdminUsername       string
 	AdminPasswordBcrypt string // env ADMIN_PASSWORD_BCRYPT (preferred)
@@ -152,6 +161,21 @@ func Load() Config {
 			}
 		}
 	}
+	cfg.SearchIndexWriteBackEnabled = getenvBool("SEARCH_INDEX_WRITE_BACK_ENABLED", true)
+	twbMs := getenvInt("SEARCH_INDEX_WRITE_BACK_TIMEOUT_MS", 5000)
+	if twbMs <= 0 {
+		twbMs = 5000
+	}
+	cfg.SearchIndexWriteBackTimeout = time.Duration(twbMs) * time.Millisecond
+	twbConc := getenvInt("SEARCH_INDEX_WRITE_BACK_MAX_CONCURRENCY", 16)
+	if twbConc <= 0 {
+		twbConc = 16
+	}
+	cfg.SearchIndexWriteBackMaxConcurrency = twbConc
+	cfg.SearchIndexWriteBackMinBodyRunes = getenvInt("SEARCH_INDEX_WRITE_BACK_MIN_BODY_RUNES", 20)
+	cfg.SearchIndexWriteBackMaxBodyRunes = getenvInt("SEARCH_INDEX_WRITE_BACK_MAX_BODY_RUNES", 32000)
+	cfg.SearchIndexWriteBackTitleMaxRunes = getenvInt("SEARCH_INDEX_WRITE_BACK_TITLE_MAX_RUNES", 256)
+	cfg.SearchIndexWriteBackIDPrefix = getenv("SEARCH_INDEX_WRITE_BACK_ID_PREFIX", "ase-q-")
 	return cfg
 }
 

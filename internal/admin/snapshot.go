@@ -1,19 +1,25 @@
 package admin
 
-import "github.com/example/ase/internal/config"
+import (
+	"time"
+
+	"github.com/example/ase/internal/config"
+)
 
 // ConfigSnapshot returns a JSON-serializable, non-secret view of runtime configuration.
 func ConfigSnapshot(cfg config.Config) map[string]any {
 	out := map[string]any{
 		"http_addr": cfg.HTTPAddr,
 		"search": map[string]any{
-			"default_providers":   cfg.SearchDefaultProviders,
-			"min_hit_count":       cfg.MinHitCount,
-			"min_total_text_len":  cfg.MinTotalTextLen,
-			"min_similarity":      cfg.MinSimilarity,
-			"max_query_runes":     cfg.MaxQueryRunes,
-			"max_response_runes":  cfg.MaxResponseRunes,
-			"request_deadline_ms": int(cfg.RequestDeadline / 1_000_000),
+			"default_providers":           cfg.SearchDefaultProviders,
+			"min_hit_count":               cfg.MinHitCount,
+			"min_total_text_len":          cfg.MinTotalTextLen,
+			"min_similarity":              cfg.MinSimilarity,
+			"max_query_runes":             cfg.MaxQueryRunes,
+			"max_response_runes":          cfg.MaxResponseRunes,
+			"request_deadline_ms":         int(cfg.RequestDeadline / 1_000_000),
+			"index_write_back_enabled":    cfg.SearchIndexWriteBackEnabled,
+			"index_write_back_timeout_ms": int(cfg.SearchIndexWriteBackTimeout / time.Millisecond),
 		},
 		"rate_limit": map[string]any{
 			"per_key_rps":  cfg.RateLimitPerKey,

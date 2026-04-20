@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -24,6 +25,23 @@ func (s sliceIndex) Search(_ context.Context, _ string) ([]port.Hit, error) {
 }
 
 func (sliceIndex) IndexDocument(_ context.Context, _ string, _, _ string) error {
+	return nil
+}
+
+type captureIndex struct {
+	sliceIndex
+	mu     sync.Mutex
+	calls  int
+	lastID string
+	wg     sync.WaitGroup
+}
+
+func (c *captureIndex) IndexDocument(_ context.Context, id, _, _ string) error {
+	c.mu.Lock()
+	c.calls++
+	c.lastID = id
+	c.mu.Unlock()
+	c.wg.Done()
 	return nil
 }
 
@@ -188,5 +206,81 @@ func TestService_indexError(t *testing.T) {
 	_, err := svc.SearchMarkdown(context.Background(), "q", nil, nil)
 	if err == nil {
 		t.Fatal("expected error")
+	}
+}
+
+func TestService_providerPath_indexWriteBack_queryKeyedID(t *testing.T) {
+	idx := &captureIndex{sliceIndex: sliceIndex{hits: nil}}
+	idx.wg.Add(1)
+	snippet := strings.Repeat("snippet text ", 8)
+	sp := &spyProvider{result: port.ProviderResult{Items: []port.ProviderItem{{Snippet: snippet}}}}
+	svc := &Service{
+		Index:        idx,
+		Registry:     map[string]port.SearchProvider{"stub": sp},
+		DefaultNames: []string{"stub"},
+		Config: config.Config{
+			MinHitCount:                       1,
+			MinTotalTextLen:                   1000,
+			MinSimilarity:                     0,
+			MaxResponseRunes:                  10000,
+			RequestDeadline:                   time.Minute,
+			SearchIndexWriteBackEnabled:       true,
+			SearchIndexWriteBackTimeout:       5 * time.Second,
+			SearchIndexWriteBackMinBodyRunes:  10,
+			SearchIndexWriteBackMaxBodyRunes:  100000,
+			SearchIndexWriteBackTitleMaxRunes: 200,
+			SearchIndexWriteBackIDPrefix:      "ase-q-",
+			SearchIndexWriteBackMaxConcurrency: 4,
+		},
+	}
+	q := "hello-writeback-query-unique"
+	_, err := svc.SearchMarkdown(context.Background(), q, []string{"stub"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan struct{})
+	go func() {
+		idx.wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(3 * time.Second):
+		t.Fatal("timeout waiting for IndexDocument")
+	}
+	want := queryWriteBackDocID("ase-q-", q)
+	idx.mu.Lock()
+	got := idx.lastID
+	idx.mu.Unlock()
+	if got != want {
+		t.Fatalf("doc id = %q want %q", got, want)
+	}
+}
+
+func TestService_indexEnough_skipsWriteBack(t *testing.T) {
+	idx := &captureIndex{sliceIndex: sliceIndex{hits: []port.Hit{{Body: strings.Repeat("a", 200), Score: 1}}}}
+	svc := &Service{
+		Index:        idx,
+		Registry:     map[string]port.SearchProvider{"stub": &spyProvider{}},
+		DefaultNames: []string{"stub"},
+		Config: config.Config{
+			MinHitCount:                 1,
+			MinTotalTextLen:             10,
+			MinSimilarity:               0,
+			MaxResponseRunes:            10000,
+			RequestDeadline:             time.Minute,
+			SearchIndexWriteBackEnabled: true,
+		},
+	}
+	_, err := svc.SearchMarkdown(context.Background(), "q", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(150 * time.Millisecond)
+	idx.mu.Lock()
+	n := idx.calls
+	idx.mu.Unlock()
+	if n != 0 {
+		t.Fatalf("expected no IndexDocument on index path, calls=%d", n)
 	}
 }

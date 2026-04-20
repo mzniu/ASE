@@ -35,6 +35,8 @@
 
 同时配置 **`OPENSEARCH_URLS`**（逗号分隔，如 `https://search.example:9200`）与 **`OPENSEARCH_INDEX`** 后，服务使用 [opensearch-go](https://github.com/opensearch-project/opensearch-go) 对索引字段 **`title`**、**`body_text`** 做 `multi_match` 检索；可选 **`OPENSEARCH_USER`** / **`OPENSEARCH_PASSWORD`**（HTTP Basic）、**`OPENSEARCH_SEARCH_SIZE`**（默认 10）。未配置两项时回退为内存空索引（与此前行为一致）。映射与查询约定见 [docs/DETAILED_DESIGN.md](./docs/DETAILED_DESIGN.md) §6.3。
 
+**Phase-1 索引回写**：当索引「不够」而走 **provider 回落**并成功返回 Markdown 时，服务会 **异步** 将正文写入 OpenSearch（`title` 为查询截断、`body_text` 为轻量去 Markdown 后的文本）；文档 **`_id` = `SEARCH_INDEX_WRITE_BACK_ID_PREFIX` + SHA256(trim(`query`))**，同一查询重复覆盖。**默认开启**（`SEARCH_INDEX_WRITE_BACK_ENABLED`，见 `.env.example` / `docker-compose.yml`）；关闭可设 `false`。仅回落路径写回；索引已足够时不会写。
+
 ### 端点一览（v1）
 
 | 方法 | 路径 | 说明 |

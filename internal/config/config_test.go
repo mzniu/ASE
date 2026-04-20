@@ -19,6 +19,9 @@ func TestLoad_defaults(t *testing.T) {
 		"BING_BROWSER_ENABLED", "BING_BROWSER_MAX_RESULTS", "BING_BROWSER_USER_AGENT", "BING_BROWSER_MARKET",
 		"GOOGLE_BROWSER_ENABLED", "GOOGLE_BROWSER_MAX_RESULTS", "GOOGLE_BROWSER_USER_AGENT", "GOOGLE_BROWSER_HL", "GOOGLE_BROWSER_GL",
 		"SEARCH_DEFAULT_PROVIDERS",
+		"SEARCH_INDEX_WRITE_BACK_ENABLED", "SEARCH_INDEX_WRITE_BACK_TIMEOUT_MS", "SEARCH_INDEX_WRITE_BACK_MAX_CONCURRENCY",
+		"SEARCH_INDEX_WRITE_BACK_MIN_BODY_RUNES", "SEARCH_INDEX_WRITE_BACK_MAX_BODY_RUNES", "SEARCH_INDEX_WRITE_BACK_TITLE_MAX_RUNES",
+		"SEARCH_INDEX_WRITE_BACK_ID_PREFIX",
 		"ADMIN_USERNAME", "ADMIN_PASSWORD_BCRYPT", "ADMIN_PASSWORD", "ADMIN_SESSION_SECRET", "ADMIN_SESSION_TTL_SECONDS",
 	} {
 		t.Setenv(k, "")
@@ -35,6 +38,20 @@ func TestLoad_defaults(t *testing.T) {
 	}
 	if c.FetchConcurrency != 4 {
 		t.Fatalf("FetchConcurrency = %d", c.FetchConcurrency)
+	}
+	if !c.SearchIndexWriteBackEnabled {
+		t.Fatal("SearchIndexWriteBackEnabled should default to true")
+	}
+	if c.SearchIndexWriteBackTimeout != 5*time.Second {
+		t.Fatalf("SearchIndexWriteBackTimeout = %v", c.SearchIndexWriteBackTimeout)
+	}
+}
+
+func TestLoad_searchIndexWriteBack_disabled(t *testing.T) {
+	t.Setenv("SEARCH_INDEX_WRITE_BACK_ENABLED", "false")
+	c := Load()
+	if c.SearchIndexWriteBackEnabled {
+		t.Fatal("expected write-back disabled")
 	}
 }
 
