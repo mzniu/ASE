@@ -6,3 +6,8 @@ import _ "embed"
 //
 //go:embed index.html
 var IndexHTML []byte
+
+// AdminHTML is the admin console (config + index view), embedded into the binary.
+//
+//go:embed admin.html
+var AdminHTML []byte

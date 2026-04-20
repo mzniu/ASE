@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/example/ase/internal/config"
 	"github.com/example/ase/internal/handler"
 )
 
@@ -29,7 +30,7 @@ func TestRoot_GET_returnsHTML(t *testing.T) {
 func TestServiceInfo_GET_returnsJSON(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/info", nil)
 	rr := httptest.NewRecorder()
-	handler.ServiceInfo(rr, req)
+	handler.ServiceInfo(config.Config{})(rr, req)
 	if rr.Code != http.StatusOK {
 		t.Fatalf("status = %d", rr.Code)
 	}

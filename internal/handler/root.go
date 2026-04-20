@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/example/ase/internal/config"
 	"github.com/example/ase/internal/webcontent"
 )
 
@@ -15,21 +16,27 @@ func Root(w http.ResponseWriter, _ *http.Request) {
 }
 
 // ServiceInfo serves GET /api/info — JSON discovery for curl and integrations.
-func ServiceInfo(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(map[string]any{
-		"service": "ase",
-		"summary": "AI agent search API — POST /v1/search returns Markdown",
-		"links": map[string]string{
-			"home":       "/",
-			"health":     "/health",
-			"metrics":    "/metrics",
-			"search":     "/v1/search",
-			"documents":  "/v1/documents",
-			"skill_md":   "/skills/ase-search-api/SKILL.md",
-			"skill_ref":  "/skills/ase-search-api/reference.md",
-			"skill_zip":  "/skills/ase-search-api/bundle.zip",
-		},
-	})
+func ServiceInfo(cfg config.Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		links := map[string]string{
+			"home":      "/",
+			"health":    "/health",
+			"metrics":   "/metrics",
+			"search":    "/v1/search",
+			"documents": "/v1/documents",
+			"skill_md":  "/skills/ase-search-api/SKILL.md",
+			"skill_ref": "/skills/ase-search-api/reference.md",
+			"skill_zip": "/skills/ase-search-api/bundle.zip",
+		}
+		if cfg.AdminUIEnabled() {
+			links["admin"] = "/admin/"
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"service": "ase",
+			"summary": "AI agent search API — POST /v1/search returns Markdown",
+			"links":   links,
+		})
+	}
 }

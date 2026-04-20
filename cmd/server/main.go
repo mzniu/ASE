@@ -24,6 +24,7 @@ import (
 	"github.com/example/ase/internal/adapter/opensearch"
 	"github.com/example/ase/internal/adapter/stubprovider"
 	"github.com/example/ase/internal/adapter/tavily"
+	"github.com/example/ase/internal/admin"
 	"github.com/example/ase/internal/config"
 	"github.com/example/ase/internal/handler"
 	apimw "github.com/example/ase/internal/middleware"
@@ -45,6 +46,9 @@ func main() {
 	loadDotEnv()
 
 	cfg := config.Load()
+	if cfg.AdminPasswordPlain != "" && cfg.AdminPasswordBcrypt == "" {
+		log.Print("warning: ADMIN_PASSWORD is set; prefer ADMIN_PASSWORD_BCRYPT in production")
+	}
 
 	oi, err := opensearch.NewFromConfig(cfg)
 	if err != nil {
@@ -93,7 +97,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	r.Get("/", handler.Root)
-	r.Get("/api/info", handler.ServiceInfo)
+	r.Get("/api/info", handler.ServiceInfo(cfg))
 	r.Get("/health", handler.Health)
 	r.Handle("/metrics", promhttp.Handler())
 
@@ -101,6 +105,12 @@ func main() {
 	r.Get("/skills/ase-search-api/SKILL.md", handler.SkillSKILLMD)
 	r.Get("/skills/ase-search-api/reference.md", handler.SkillReferenceMD)
 	r.Get("/skills/ase-search-api/bundle.zip", handler.SkillBundleZIP)
+
+	signer := admin.NewSessionSigner(cfg)
+	if cfg.AdminUIEnabled() {
+		log.Print("admin UI enabled: GET /admin/")
+		handler.RegisterAdmin(r, cfg, signer)
+	}
 
 	r.Group(func(r chi.Router) {
 		r.Use(apimw.RateLimit(cfg))

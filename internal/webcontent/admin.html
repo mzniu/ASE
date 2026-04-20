@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ASE Admin</title>
+  <style>
+    :root { --bg:#0f1419; --card:#1a2332; --text:#e6edf3; --muted:#8b9cb3; --accent:#3b82f6; --err:#f87171; }
+    * { box-sizing: border-box; }
+    body { font-family: ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 1.5rem; line-height: 1.5; }
+    h1 { font-size: 1.25rem; margin: 0 0 1rem; }
+    .card { background: var(--card); border-radius: 8px; padding: 1rem 1.25rem; max-width: 56rem; margin-bottom: 1rem; }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.25rem; }
+    input { width: 100%; max-width: 24rem; padding: 0.5rem 0.65rem; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: var(--text); }
+    button { background: var(--accent); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    button.secondary { background: #334155; margin-left: 0.5rem; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    pre { background: #0f172a; padding: 1rem; border-radius: 6px; overflow: auto; font-size: 0.8rem; max-height: 24rem; border: 1px solid #334155; }
+    .err { color: var(--err); font-size: 0.9rem; margin-top: 0.5rem; }
+    .row { margin-bottom: 0.75rem; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <h1>ASE 管理</h1>
+
+  <div id="login" class="card">
+    <p style="color:var(--muted);font-size:0.9rem;">使用环境变量配置的用户名与密码登录（生产环境请使用 <code>ADMIN_PASSWORD_BCRYPT</code>）。</p>
+    <div class="row"><label for="user">用户名</label><input id="user" autocomplete="username" /></div>
+    <div class="row"><label for="pass">密码</label><input id="pass" type="password" autocomplete="current-password" /></div>
+    <button type="button" id="btnLogin">登录</button>
+    <div id="loginErr" class="err hidden"></div>
+  </div>
+
+  <div id="dash" class="hidden">
+    <div class="card">
+      <button type="button" id="btnLogout" class="secondary">退出</button>
+    </div>
+    <div class="card">
+      <h2 style="font-size:1rem;margin:0 0 0.5rem;">配置（脱敏）</h2>
+      <pre id="cfg">加载中…</pre>
+    </div>
+    <div class="card">
+      <h2 style="font-size:1rem;margin:0 0 0.5rem;">OpenSearch 索引</h2>
+      <pre id="idx">加载中…</pre>
+    </div>
+  </div>
+
+  <script>
+    async function api(path, opt) {
+      const r = await fetch(path, Object.assign({ credentials: "same-origin" }, opt || {}));
+      const ct = r.headers.get("content-type") || "";
+      const body = ct.indexOf("json") >= 0 ? await r.json().catch(function() { return null; }) : await r.text();
+      if (!r.ok) throw new Error((body && body.detail) || body || r.status);
+      return body;
+    }
+
+    async function refreshSession() {
+      try {
+        var s = await api("/admin/api/session");
+        if (s && s.ok) { showDash(); return; }
+      } catch (e) {}
+      document.getElementById("login").classList.remove("hidden");
+      document.getElementById("dash").classList.add("hidden");
+    }
+
+    async function showDash() {
+      document.getElementById("login").classList.add("hidden");
+      document.getElementById("dash").classList.remove("hidden");
+      document.getElementById("cfg").textContent = "加载中…";
+      document.getElementById("idx").textContent = "加载中…";
+      try {
+        var c = await api("/admin/api/config");
+        document.getElementById("cfg").textContent = JSON.stringify(c, null, 2);
+      } catch (e) {
+        document.getElementById("cfg").textContent = String(e);
+      }
+      try {
+        var raw = await fetch("/admin/api/indices", { credentials: "same-origin" });
+        var t = await raw.text();
+        try { document.getElementById("idx").textContent = JSON.stringify(JSON.parse(t), null, 2); }
+        catch (_) { document.getElementById("idx").textContent = t; }
+        if (!raw.ok) document.getElementById("idx").textContent = "错误 " + raw.status + ": " + t;
+      } catch (e) {
+        document.getElementById("idx").textContent = String(e);
+      }
+    }
+
+    document.getElementById("btnLogin").onclick = async function() {
+      var err = document.getElementById("loginErr");
+      err.classList.add("hidden");
+      try {
+        await api("/admin/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: document.getElementById("user").value,
+            password: document.getElementById("pass").value
+          })
+        });
+        await showDash();
+      } catch (e) {
+        err.textContent = String(e.message || e);
+        err.classList.remove("hidden");
+      }
+    };
+
+    document.getElementById("btnLogout").onclick = async function() {
+      await fetch("/admin/api/logout", { method: "POST", credentials: "same-origin" });
+      await refreshSession();
+    };
+
+    refreshSession();
+  </script>
+</body>
+</html>

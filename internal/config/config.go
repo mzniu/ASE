@@ -54,10 +54,10 @@ type Config struct {
 	BaiduBrowserUserAgent  string
 
 	// Bing SERP via headless Chrome (chromedp), same pattern as Baidu.
-	BingBrowserEnabled     bool
-	BingBrowserMaxResults  int
-	BingBrowserUserAgent   string
-	BingBrowserMarket      string // e.g. zh-CN → mkt= (optional)
+	BingBrowserEnabled    bool
+	BingBrowserMaxResults int
+	BingBrowserUserAgent  string
+	BingBrowserMarket     string // e.g. zh-CN → mkt= (optional)
 
 	// Google SERP via headless Chrome (chromedp).
 	GoogleBrowserEnabled    bool
@@ -68,6 +68,13 @@ type Config struct {
 
 	// SearchDefaultProviders is the default list when the JSON body omits "providers" (comma env SEARCH_DEFAULT_PROVIDERS).
 	SearchDefaultProviders []string
+
+	// Admin UI (GET /admin/): username + password (bcrypt hash or dev plain) + session secret.
+	AdminUsername       string
+	AdminPasswordBcrypt string // env ADMIN_PASSWORD_BCRYPT (preferred)
+	AdminPasswordPlain  string // env ADMIN_PASSWORD — dev only; ignored when AdminPasswordBcrypt is set
+	AdminSessionSecret  string // env ADMIN_SESSION_SECRET — HMAC key for cookie session
+	AdminSessionTTL     time.Duration
 }
 
 // Load reads configuration from environment variables with documented defaults.
@@ -111,7 +118,16 @@ func Load() Config {
 		GoogleBrowserUserAgent:  os.Getenv("GOOGLE_BROWSER_USER_AGENT"),
 		GoogleBrowserHL:         getenv("GOOGLE_BROWSER_HL", ""),
 		GoogleBrowserGL:         getenv("GOOGLE_BROWSER_GL", ""),
+		AdminUsername:           strings.TrimSpace(os.Getenv("ADMIN_USERNAME")),
+		AdminPasswordBcrypt:     strings.TrimSpace(os.Getenv("ADMIN_PASSWORD_BCRYPT")),
+		AdminPasswordPlain:      os.Getenv("ADMIN_PASSWORD"),
+		AdminSessionSecret:      strings.TrimSpace(os.Getenv("ADMIN_SESSION_SECRET")),
 	}
+	ttlSec := getenvInt("ADMIN_SESSION_TTL_SECONDS", 86400)
+	if ttlSec < 60 {
+		ttlSec = 86400
+	}
+	cfg.AdminSessionTTL = time.Duration(ttlSec) * time.Second
 	if s := os.Getenv("SEARCH_DEFAULT_PROVIDERS"); s != "" {
 		for _, p := range strings.Split(s, ",") {
 			p = strings.TrimSpace(strings.ToLower(p))
@@ -137,6 +153,20 @@ func Load() Config {
 		}
 	}
 	return cfg
+}
+
+// AdminUIEnabled is true when admin routes should be registered (username, password, and session secret present).
+func (c Config) AdminUIEnabled() bool {
+	if c.AdminUsername == "" || c.AdminSessionSecret == "" {
+		return false
+	}
+	if len(c.AdminSessionSecret) < 16 {
+		return false
+	}
+	if c.AdminPasswordBcrypt != "" {
+		return true
+	}
+	return strings.TrimSpace(c.AdminPasswordPlain) != ""
 }
 
 func getenv(key, def string) string {

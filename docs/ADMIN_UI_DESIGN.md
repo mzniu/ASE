@@ -1,5 +1,7 @@
 # Admin 管理界面方案设计（外网 18080）
 
+**实现状态（方案 A）**：已落地。启用条件见环境变量 `ADMIN_USERNAME`、`ADMIN_PASSWORD_BCRYPT`（或开发用 `ADMIN_PASSWORD`）、`ADMIN_SESSION_SECRET`（≥16 字符）。路由：`GET /admin/`、`POST /admin/api/login`、`GET /admin/api/config`、`GET /admin/api/indices` 等。详见 `.env.example`。
+
 ## 1. 目标与边界
 
 | 目标 | 说明 |
