@@ -7,19 +7,20 @@ require github.com/go-chi/chi/v5 v5.2.2
 require golang.org/x/time v0.15.0
 
 require (
-	github.com/JohannesKaufmann/html-to-markdown/v2 v2.5.0
+	github.com/JohannesKaufmann/html-to-markdown/v2 v2.5.2
 	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/chromedp/chromedp v0.15.1
 	github.com/go-shiori/go-readability v0.0.0-20251205110129-5db1dc9836f0
 	github.com/joho/godotenv v1.5.1
 	github.com/opensearch-project/opensearch-go/v4 v4.6.0
 	github.com/prometheus/client_golang v1.22.0
+	golang.org/x/crypto v0.51.0
 	golang.org/x/sync v0.20.0
 )
 
 require (
-	github.com/JohannesKaufmann/dom v0.2.0 // indirect
-	github.com/andybalholm/cascadia v1.3.3 // indirect
+	github.com/JohannesKaufmann/dom v0.3.1 // indirect
+	github.com/andybalholm/cascadia v1.3.4 // indirect
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -35,9 +36,8 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	golang.org/x/crypto v0.50.0 // indirect
-	golang.org/x/net v0.52.0 // indirect
-	golang.org/x/sys v0.43.0 // indirect
-	golang.org/x/text v0.36.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
 )
