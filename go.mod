@@ -2,7 +2,7 @@ module github.com/example/ase
 
 go 1.26
 
-require github.com/go-chi/chi/v5 v5.2.2
+require github.com/go-chi/chi/v5 v5.3.1
 
 require golang.org/x/time v0.15.0
 
@@ -14,6 +14,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/opensearch-project/opensearch-go/v4 v4.6.0
 	github.com/prometheus/client_golang v1.22.0
+	golang.org/x/crypto v0.50.0
 	golang.org/x/sync v0.20.0
 )
 
@@ -35,7 +36,6 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
-	golang.org/x/crypto v0.50.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
